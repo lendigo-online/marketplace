@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 11%;
+
+    --primary: 0 0% 11%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 11%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 43%;
+
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 11%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 211 100% 50%;
+
+    --radius: 18px;
+
+    /* Apple color tokens */
+    --apple-bg: #fbfbfd;
+    --apple-text: #1d1d1f;
+    --apple-secondary: #6e6e73;
+    --apple-blue: #0071e3;
+    --apple-blue-hover: #0077ed;
+    --apple-surface: rgba(255, 255, 255, 0.85);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    background-color: var(--apple-bg);
+    color: var(--apple-text);
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ---- Glassmorphism ---- */
+.glass {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* ---- Apple Button Styles ---- */
+@layer components {
+  .btn-apple-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-semibold bg-[#0071e3] text-white hover:bg-[#0077ed] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:ring-offset-2;
+  }
+
+  .btn-apple-secondary {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-semibold bg-transparent text-[#0071e3] border border-[#0071e3] hover:bg-[#0071e3]/5 transition-all duration-200;
+  }
+
+  .btn-apple-dark {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-semibold bg-[#1d1d1f] text-white hover:bg-black transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#1d1d1f] focus:ring-offset-2;
+  }
+
+  /* ---- Apple Input Styles ---- */
+  .apple-input {
+    @apply w-full rounded-2xl border border-[#d2d2d7] bg-white px-4 py-3 text-sm text-[#1d1d1f] placeholder:text-[#6e6e73] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent transition-all duration-200;
+  }
+
+  /* ---- Card hover ---- */
+  .apple-card {
+    @apply bg-white rounded-[24px] shadow-[0_2px_16px_rgba(0, 0, 0, 0.06)] hover:shadow-[0_8px_32px_rgba(0, 0, 0, 0.12)] transition-all duration-300;
+  }
+}
+
+/* Page entry animation */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.5s ease forwards;
+}
+
+/* ---- react-day-picker (Navbar search calendar) ---- */
+.rdp {
+  --rdp-accent-color: #1d1d1f;
+  --rdp-background-color: #f0f0f0;
+  --rdp-accent-color-dark: #1d1d1f;
+  --rdp-background-color-dark: #f0f0f0;
+  font-size: 13px;
+  margin: 0;
+}
+
+.rdp-day_selected:not(.rdp-day_range_middle) {
+  background-color: #1d1d1f !important;
+  color: white !important;
+  border-radius: 50%;
+}
+
+.rdp-day_range_middle {
+  background-color: #f0f0f0 !important;
+  color: #1d1d1f !important;
+  border-radius: 0;
+}
+
+.rdp-day_today:not(.rdp-day_selected) {
+  color: #0071e3;
+  font-weight: 700;
+}
+
+.rdp-day_disabled {
+  color: #d2d2d7 !important;
+  opacity: 0.5;
+}
+
+.rdp-day:hover:not(.rdp-day_selected):not(.rdp-day_disabled) {
+  background-color: #f5f5f7;
+  border-radius: 50%;
+}
