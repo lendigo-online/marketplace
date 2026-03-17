@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
+import { Suspense } from "react"
 import "./globals.css"
 import { ClientProvider } from "@/providers/ClientProvider"
 import Navbar from "@/components/Navbar"
@@ -26,7 +27,9 @@ export default function RootLayout({
         <html lang="pl" className={inter.variable}>
             <body className={`${inter.className} antialiased`}>
                 <ClientProvider>
-                    <Navbar />
+                    <Suspense fallback={null}>
+                        <Navbar />
+                    </Suspense>
                     <main className="min-h-screen pt-[120px] pb-12">
                         {children}
                     </main>
