@@ -1,0 +1,4 @@
+id,name,email,emailVerified,image,hashedPassword,createdAt,updatedAt
+usr_1,Alice Smith,alice@example.com,,https://api.dicebear.com/7.x/avataaars/svg?seed=Alice,,2024-03-01T12:00:00Z,2024-03-01T12:00:00Z
+usr_2,Bob Jones,bob@example.com,,https://api.dicebear.com/7.x/avataaars/svg?seed=Bob,,2024-03-02T15:30:00Z,2024-03-02T15:30:00Z
+usr_3,Charlie Brown,charlie@example.com,,https://api.dicebear.com/7.x/avataaars/svg?seed=Charlie,,2024-03-03T09:15:00Z,2024-03-03T09:15:00Z

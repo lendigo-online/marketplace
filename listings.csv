@@ -1,0 +1,5 @@
+id,title,description,pricePerDay,location,imageSrc,category,createdAt,updatedAt,ownerId
+lst_1,Modern Beachfront Villa,Beautiful modern villa located right on the beach with private pool.,450,Miami, Florida,https://images.unsplash.com/photo-1499793983690-e29da59ef1c2,Properties,2024-03-05T10:00:00Z,2024-03-05T10:00:00Z,usr_1
+lst_2,Professional Camera Kit,Sony A7III with 24-70mm and 70-200mm GM lenses plus tripods.,85,Los Angeles, California,https://images.unsplash.com/photo-1516035069371-29a1b244cc32,Electronics,2024-03-06T14:20:00Z,2024-03-06T14:20:00Z,usr_2
+lst_3,Mountain Bike Pro,High-end full suspension mountain bike perfect for rough trails.,45,Denver, Colorado,https://images.unsplash.com/photo-1576435728678-f2b1d7d23f37,Vehicles,2024-03-07T11:45:00Z,2024-03-07T11:45:00Z,usr_3
+lst_4,DJI Mavic 3 Drone,Professional 5.1K drone with 3 batteries and ND filters.,65,Seattle, Washington,https://images.unsplash.com/photo-1579829366248-204fe8413f31,Electronics,2024-03-08T09:10:00Z,2024-03-08T09:10:00Z,usr_1
