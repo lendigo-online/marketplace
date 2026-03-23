@@ -3,6 +3,7 @@ import ListingCard from "@/components/ListingCard"
 import { SafeListing } from "@/types"
 import Link from "next/link"
 import { ArrowRight, Tag } from "lucide-react"
+import Typewriter from "@/components/Typewriter"
 
 export const revalidate = 0
 
@@ -63,13 +64,7 @@ export default async function Home({ searchParams }: HomeProps) {
                         <span className="text-[12px] font-medium text-[#6e6e73]">Wypożycz cokolwiek — płać tylko za czas</span>
                     </div>
 
-                    <h1 className="text-[56px] md:text-[72px] font-bold leading-none tracking-[-0.04em] text-[#1d1d1f] mb-6">
-                        Wypożycz cokolwiek.
-                        <br />
-                        <span className="bg-gradient-to-r from-[#0071e3] via-[#5856d6] to-[#34aadc] bg-clip-text text-transparent">
-                            Gdziekolwiek.
-                        </span>
-                    </h1>
+                    <Typewriter />
 
                     <p className="text-[19px] md:text-[21px] text-[#6e6e73] font-light leading-relaxed max-w-[600px] mx-auto mb-10">
                         Odkryj setki przedmiotów wypożyczanych przez ludzi w Twojej okolicy. Bezpiecznie, prosto, bez zobowiązań.
@@ -92,19 +87,7 @@ export default async function Home({ searchParams }: HomeProps) {
                     </div>
                 </div>
 
-                {/* Stats strip */}
-                <div className="relative max-w-[860px] mx-auto mt-16 grid grid-cols-3 gap-6">
-                    {[
-                        { value: "500+", label: "Ogłoszeń aktywnych" },
-                        { value: "2 000+", label: "Zadowolonych użytkowników" },
-                        { value: "98%", label: "Pozytywnych opinii" },
-                    ].map((stat) => (
-                        <div key={stat.label} className="text-center bg-white/70 backdrop-blur-sm rounded-2xl py-6 shadow-apple-sm border border-white">
-                            <div className="text-[28px] font-bold tracking-tight text-[#1d1d1f]">{stat.value}</div>
-                            <div className="text-[13px] text-[#6e6e73] mt-1 font-medium">{stat.label}</div>
-                        </div>
-                    ))}
-                </div>
+
             </section>
 
             {/* ── Listings Grid ── */}
