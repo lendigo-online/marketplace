@@ -17,13 +17,33 @@ export async function POST(request: Request) {
 
         if (!user) return new NextResponse("Unauthorized", { status: 401 })
 
-        const { listingId, startDate, endDate, totalPrice } = await request.json()
+        const { listingId, startDate, endDate } = await request.json()
+
+        if (!listingId || !startDate || !endDate) {
+            return new NextResponse("Missing criteria", { status: 400 })
+        }
+
+        const start = new Date(startDate)
+        const end = new Date(endDate)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            return new NextResponse("Invalid dates", { status: 400 })
+        }
+
+        if (start < today || end <= start) {
+            return new NextResponse("Invalid date range", { status: 400 })
+        }
 
         const listing = await prisma.listing.findUnique({
             where: { id: listingId }
         })
 
         if (!listing) return new NextResponse("Listing not found", { status: 404 })
+
+        const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+        const totalPrice = listing.pricePerDay * days
 
         const stripeSession = await stripe.checkout.sessions.create({
             success_url: `${process.env.NEXTAUTH_URL}/dashboard?success=1`,
@@ -34,27 +54,27 @@ export async function POST(request: Request) {
             line_items: [
                 {
                     price_data: {
-                        currency: "usd",
+                        currency: "pln",
                         product_data: {
                             name: listing.title,
-                            description: `Reservation from ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}`,
+                            description: `Rezerwacja od ${start.toLocaleDateString('pl-PL')} do ${end.toLocaleDateString('pl-PL')} (${days} dni)`,
                         },
-                        unit_amount: Math.round(totalPrice * 100), // Stripe expects cents
+                        unit_amount: Math.round(totalPrice * 100),
                     },
                     quantity: 1,
                 },
             ],
             metadata: {
                 listingId,
-                startDate: new Date(startDate).toISOString(),
-                endDate: new Date(endDate).toISOString(),
+                startDate: start.toISOString(),
+                endDate: end.toISOString(),
                 userId: user.id
             }
         })
 
         return NextResponse.json({ url: stripeSession.url })
     } catch (error) {
-        console.log("[STRIPE_CHECKOUT]", error)
+        console.error("[STRIPE_CHECKOUT]", error)
         return new NextResponse("Internal server error", { status: 500 })
     }
 }

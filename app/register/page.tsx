@@ -12,6 +12,7 @@ export default function RegisterPage() {
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+    const [accepted, setAccepted] = useState(false)
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -108,8 +109,29 @@ export default function RegisterPage() {
                             />
                         </div>
 
+                        {/* Terms checkbox */}
+                        <label className="flex items-start gap-3 cursor-pointer mt-1">
+                            <input
+                                type="checkbox"
+                                required
+                                checked={accepted}
+                                onChange={e => setAccepted(e.target.checked)}
+                                className="mt-0.5 w-4 h-4 accent-[#1d1d1f] flex-shrink-0 cursor-pointer"
+                            />
+                            <span className="text-[12px] text-[#6e6e73] leading-relaxed">
+                                Akceptuję{" "}
+                                <Link href="/warunki" target="_blank" className="text-[#0071e3] hover:underline font-medium">
+                                    Warunki korzystania
+                                </Link>{" "}
+                                oraz{" "}
+                                <Link href="/polityka" target="_blank" className="text-[#0071e3] hover:underline font-medium">
+                                    Politykę prywatności
+                                </Link>
+                            </span>
+                        </label>
+
                         <button
-                            disabled={isLoading}
+                            disabled={isLoading || !accepted}
                             type="submit"
                             className="btn-apple-primary w-full mt-3 py-3.5 text-[15px] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -124,13 +146,6 @@ export default function RegisterPage() {
                     <Link href="/login" className="text-[#0071e3] font-semibold hover:underline">
                         Zaloguj się
                     </Link>
-                </p>
-
-                <p className="text-center text-[11px] text-[#6e6e73] mt-4 leading-relaxed">
-                    Tworząc konto, akceptujesz nasze{" "}
-                    <span className="text-[#0071e3] cursor-pointer">Warunki użytkowania</span>{" "}
-                    i{" "}
-                    <span className="text-[#0071e3] cursor-pointer">Politykę prywatności</span>
                 </p>
             </motion.div>
         </div>
