@@ -15,10 +15,10 @@ export default function Footer() {
                             <a href="mailto:lendigo00@gmail.com" className="hover:text-[#1d1d1f] transition-colors">lendigo00@gmail.com</a>
                         </div>
                         <div className="flex items-center gap-6">
-                            <Link href="/" className="hover:text-[#1d1d1f] transition-colors">
+                            <Link href="/warunki" className="hover:text-[#1d1d1f] transition-colors">
                                 Warunki korzystania
                             </Link>
-                            <Link href="/" className="hover:text-[#1d1d1f] transition-colors">
+                            <Link href="/polityka" className="hover:text-[#1d1d1f] transition-colors">
                                 Polityka prywatności
                             </Link>
                         </div>

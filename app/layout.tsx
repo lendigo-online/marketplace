@@ -5,6 +5,7 @@ import "./globals.css"
 import { ClientProvider } from "@/providers/ClientProvider"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
+import CookieBanner from "@/components/CookieBanner"
 
 const inter = Inter({
     subsets: ["latin"],
@@ -34,6 +35,7 @@ export default function RootLayout({
                         {children}
                     </main>
                     <Footer />
+                    <CookieBanner />
                 </ClientProvider>
             </body>
         </html>

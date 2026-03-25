@@ -23,11 +23,16 @@ export async function POST(request: Request) {
             return new NextResponse("Missing criteria", { status: 400 })
         }
 
+        const parsedRating = parseInt(rating)
+        if (isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+            return new NextResponse("Rating must be between 1 and 5", { status: 400 })
+        }
+
         const review = await prisma.review.create({
             data: {
                 userId: currentUser.id,
                 listingId,
-                rating: parseInt(rating),
+                rating: parsedRating,
                 comment
             }
         })
