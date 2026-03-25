@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
 const FALLBACK = "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&q=80"
@@ -26,17 +26,25 @@ export default function ImageGallery({ images, title }: ImageGalleryProps) {
             <div className="w-full relative">
                 {/* Main image */}
                 <div
-                    className="w-full h-[55vh] md:h-[65vh] relative overflow-hidden cursor-zoom-in"
+                    className="w-full h-[55vh] md:h-[65vh] relative overflow-hidden cursor-zoom-in group"
                     onClick={() => setLightbox(true)}
                 >
                     <Image
                         src={imgs[current]}
                         alt={title}
                         fill
-                        className="object-cover"
+                        className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                         priority
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#fbfbfd] via-transparent to-transparent" />
+
+                    {/* Zoom hint */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                        <div className="bg-black/50 backdrop-blur-sm text-white flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] font-medium">
+                            <ZoomIn size={15} />
+                            Powiększ
+                        </div>
+                    </div>
 
                     {/* Arrows */}
                     {imgs.length > 1 && (

@@ -119,7 +119,7 @@ export default function Navbar() {
                 initial={{ y: -80, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 120, damping: 22 }}
-                className="fixed w-full z-50 top-0 glass"
+                className="fixed w-full z-50 top-0 bg-white/95 backdrop-blur-xl border-b border-black/[0.06] shadow-sm"
             >
                 <div className="max-w-[1400px] mx-auto px-6 h-[56px] flex flex-row items-center justify-between gap-4">
 
@@ -270,7 +270,7 @@ export default function Navbar() {
 
             {/* Category Bar */}
             {!hideCategoryBar && (
-                <div className="fixed w-full z-40 top-[56px]">
+                <div className="fixed w-full z-40 top-[56px] bg-white/95 backdrop-blur-xl border-b border-black/[0.06]">
                     <CategoryBar />
                 </div>
             )}

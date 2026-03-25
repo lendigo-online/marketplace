@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 
 const words = ["Wypożycz", "Pożycz", "Zarabiaj", "Oszczędzaj"];
+const colors = ["#ffde59", "#0071e3", "#1d1d1f", "#00bf63"];
 const TYPING_SPEED = 120;
 const DELETING_SPEED = 60;
 const PAUSE_DURATION = 2000;
@@ -44,9 +45,15 @@ export default function Typewriter() {
   return (
     <h1 className="text-[40px] md:text-[56px] lg:text-[72px] font-bold leading-tight tracking-[-0.04em] text-[#1d1d1f] mb-6 min-h-[144px] md:min-h-[72px]">
       Rób co chcesz <br className="md:hidden" />
-      <span className="bg-gradient-to-r from-[#0071e3] via-[#5856d6] to-[#34aadc] bg-clip-text text-transparent inline-flex items-center text-left">
+      <span
+        style={{ color: colors[wordIndex % colors.length] }}
+        className="inline-flex items-center text-left transition-colors duration-300"
+      >
         {text}
-        <span className="inline-block w-[4px] h-[0.9em] bg-[#34aadc] ml-1 rounded-full animate-[pulse_1s_cubic-bezier(0.4,0,0.6,1)_infinite]"></span>
+        <span
+          style={{ backgroundColor: colors[wordIndex % colors.length] }}
+          className="inline-block w-[4px] h-[0.9em] ml-1 rounded-full animate-[pulse_1s_cubic-bezier(0.4,0,0.6,1)_infinite]"
+        />
       </span>
     </h1>
   );

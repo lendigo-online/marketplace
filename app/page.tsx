@@ -4,6 +4,7 @@ import { SafeListing } from "@/types"
 import Link from "next/link"
 import { ArrowRight, Tag } from "lucide-react"
 import Typewriter from "@/components/Typewriter"
+import PaintSplat from "@/components/PaintSplat"
 
 export const revalidate = 0
 
@@ -53,15 +54,18 @@ export default async function Home({ searchParams }: HomeProps) {
     return (
         <div className="min-h-screen bg-[#fbfbfd]">
             {/* ── Hero Section ── */}
-            <section className="relative overflow-hidden bg-gradient-to-b from-white via-[#f5f5f7] to-[#fbfbfd] pt-10 pb-20 px-6">
-                {/* Decorative gradient blobs */}
-                <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-blue-100/40 rounded-full blur-3xl pointer-events-none" />
-                <div className="absolute -top-20 -right-20 w-[400px] h-[400px] bg-purple-100/30 rounded-full blur-3xl pointer-events-none" />
+            <section className="relative overflow-hidden bg-white pt-10 pb-20 px-6">
+                {/* Paint splatters */}
+                <PaintSplat color="#ffde59" className="absolute -top-10 -left-16 w-[340px] h-[340px] opacity-60 rotate-[-20deg] pointer-events-none" />
+                <PaintSplat color="#00bf63" className="absolute -bottom-16 -left-8 w-[260px] h-[260px] opacity-50 rotate-[30deg] pointer-events-none" />
+                <PaintSplat color="#0071e3" className="absolute -top-8 -right-12 w-[300px] h-[300px] opacity-40 rotate-[15deg] pointer-events-none" />
+                <PaintSplat color="#ffde59" className="absolute bottom-0 right-10 w-[180px] h-[180px] opacity-35 rotate-[-10deg] pointer-events-none" />
+                <PaintSplat color="#00bf63" className="absolute top-1/2 -right-20 w-[220px] h-[220px] opacity-30 rotate-[45deg] pointer-events-none" />
 
                 <div className="relative max-w-[980px] mx-auto text-center">
-                    <div className="inline-flex items-center gap-2 bg-[#1d1d1f]/[0.06] rounded-full px-4 py-1.5 mb-8">
-                        <Tag size={12} className="text-[#6e6e73]" />
-                        <span className="text-[12px] font-medium text-[#6e6e73]">Wypożycz cokolwiek — płać tylko za czas</span>
+                    <div className="inline-flex items-center gap-2 bg-[#ffde59]/30 border border-[#ffde59] rounded-full px-4 py-1.5 mb-8">
+                        <Tag size={12} className="text-[#1d1d1f]" />
+                        <span className="text-[12px] font-medium text-[#1d1d1f]">Wypożycz cokolwiek — płać tylko za czas</span>
                     </div>
 
                     <Typewriter />
@@ -73,21 +77,19 @@ export default async function Home({ searchParams }: HomeProps) {
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Link
                             href="#listings"
-                            className="btn-apple-primary text-base px-8 py-3.5 shadow-apple"
+                            className="inline-flex items-center justify-center px-8 py-3.5 rounded-full text-base font-semibold bg-[#00bf63] text-white hover:bg-[#00a855] transition-all duration-200 shadow-lg shadow-[#00bf63]/30"
                         >
                             Przeglądaj ogłoszenia
                         </Link>
                         <Link
                             href="/listings/create"
-                            className="group inline-flex items-center gap-2 text-[#0071e3] text-base font-semibold hover:gap-3 transition-all duration-200"
+                            className="group inline-flex items-center gap-2 text-[#1d1d1f] text-base font-semibold hover:gap-3 transition-all duration-200"
                         >
                             Dodaj swoje ogłoszenie
                             <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
                         </Link>
                     </div>
                 </div>
-
-
             </section>
 
             {/* ── Listings Grid ── */}
