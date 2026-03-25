@@ -6,6 +6,7 @@ import { formatPrice } from "@/lib/utils"
 import Image from "next/image"
 import Link from "next/link"
 import { Plus, Package, Calendar } from "lucide-react"
+import ProfileEditor from "./ProfileEditor"
 
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions)
@@ -55,6 +56,11 @@ export default async function DashboardPage() {
             </div>
 
             <div className="max-w-[1200px] mx-auto px-6 py-10">
+                {/* Profile info */}
+                <div className="mb-10 max-w-[480px]">
+                    <ProfileEditor initialPhone={user.phone ?? null} initialWebsite={user.website ?? null} />
+                </div>
+
                 {/* My Listings */}
                 <section className="mb-14">
                     <div className="flex items-center justify-between mb-5">

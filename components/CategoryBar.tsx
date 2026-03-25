@@ -41,7 +41,6 @@ export default function CategoryBar() {
 
     const handleClick = (label: string) => {
         const params = new URLSearchParams()
-        // preserve search params
         const q = searchParams.get("q")
         const location = searchParams.get("location")
         const from = searchParams.get("from")
@@ -59,7 +58,6 @@ export default function CategoryBar() {
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1, duration: 0.3, ease: "easeOut" }}
-            className="bg-white/95 backdrop-blur-xl border-b border-black/[0.06]"
         >
             <div className="max-w-[1400px] mx-auto px-6">
                 <div className="flex flex-row items-center gap-1 overflow-x-auto no-scrollbar py-2">
