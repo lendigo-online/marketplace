@@ -32,7 +32,7 @@ export default function ListingCard({ data }: ListingCardProps) {
                     <Image
                         fill
                         className="object-cover h-full w-full transition-transform duration-500 group-hover:scale-105"
-                        src={data.imageSrc || "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&q=80"}
+                        src={data.images?.[0] || "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&q=80"}
                         alt={data.title}
                     />
                     {/* Gradient overlay at bottom */}

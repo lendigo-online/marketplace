@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma"
-import Image from "next/image"
 import { notFound } from "next/navigation"
 import { MapPin, Tag, User } from "lucide-react"
+import ImageGallery from "@/components/ImageGallery"
 
 import { formatPrice } from "@/lib/utils"
 import ReservationSidebar from "./ReservationSidebar"
@@ -57,17 +57,7 @@ export default async function ListingPage({ params }: { params: IParams }) {
 
     return (
         <div className="min-h-screen bg-[#fbfbfd]">
-            {/* Cinematic hero image */}
-            <div className="w-full h-[60vh] md:h-[68vh] overflow-hidden relative">
-                <Image
-                    src={listing.imageSrc || "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&q=80"}
-                    alt={listing.title}
-                    fill
-                    className="object-cover"
-                    priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#fbfbfd] via-[#fbfbfd]/10 to-transparent" />
-            </div>
+            <ImageGallery images={listing.images} title={listing.title} />
 
             <div className="max-w-[1100px] mx-auto px-6 -mt-8 relative z-10">
                 {/* Breadcrumb */}
