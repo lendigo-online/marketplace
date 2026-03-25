@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { writeFile } from "fs/promises"
 import path from "path"
 import crypto from "crypto"
+import sharp from "sharp"
 
 export async function POST(request: Request) {
     try {
@@ -13,10 +14,16 @@ export async function POST(request: Request) {
         }
 
         const buffer = Buffer.from(await file.arrayBuffer())
-        const filename = `${crypto.randomUUID()}-${file.name.replace(/\s/g, "_")}`
+
+        const compressed = await sharp(buffer)
+            .resize({ width: 1200, height: 900, fit: "inside", withoutEnlargement: true })
+            .jpeg({ quality: 80 })
+            .toBuffer()
+
+        const filename = `${crypto.randomUUID()}.jpg`
         const publicDir = path.join(process.cwd(), "public", "uploads")
-        
-        await writeFile(path.join(publicDir, filename), buffer)
+
+        await writeFile(path.join(publicDir, filename), compressed)
 
         return NextResponse.json({ url: `/uploads/${filename}` })
     } catch (error) {

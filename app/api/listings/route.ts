@@ -24,7 +24,7 @@ export async function POST(
             description,
             pricePerDay,
             location,
-            imageSrc,
+            images,
             category
         } = body
 
@@ -38,7 +38,7 @@ export async function POST(
                 description,
                 pricePerDay: parseFloat(pricePerDay),
                 location,
-                imageSrc,
+                images: images || [],
                 category,
                 ownerId: currentUser.id
             }

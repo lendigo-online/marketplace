@@ -85,7 +85,7 @@ export default async function DashboardPage() {
                                 >
                                     <div className="h-44 w-full relative">
                                         <Image
-                                            src={listing.imageSrc || "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&q=80"}
+                                            src={listing.images?.[0] || "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&q=80"}
                                             fill
                                             alt={listing.title}
                                             className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -132,7 +132,7 @@ export default async function DashboardPage() {
                                 >
                                     <div className="h-20 w-20 relative rounded-[14px] overflow-hidden flex-shrink-0">
                                         <Image
-                                            src={reservation.listing.imageSrc || "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&q=80"}
+                                            src={reservation.listing.images?.[0] || "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&q=80"}
                                             fill
                                             alt={reservation.listing.title}
                                             className="object-cover group-hover:scale-105 transition-transform duration-300"

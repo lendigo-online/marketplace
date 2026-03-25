@@ -12,12 +12,6 @@ import { pl } from "date-fns/locale"
 import { usePathname } from "next/navigation"
 import { DayPicker, DateRange } from "react-day-picker"
 import "react-day-picker/dist/style.css"
-import dynamic from "next/dynamic"
-
-const MapPicker = dynamic(() => import("@/components/MapPicker"), {
-    ssr: false,
-    loading: () => <div className="h-[300px] w-full bg-black/[0.04] rounded-2xl animate-pulse" />
-})
 
 export default function Navbar() {
     const router = useRouter()
@@ -36,7 +30,9 @@ export default function Navbar() {
         return undefined
     })
     const [showCalendar, setShowCalendar] = useState(false)
-    const [showLocationMap, setShowLocationMap] = useState(false)
+    const [showLocationSuggestions, setShowLocationSuggestions] = useState(false)
+    const [locationSuggestions, setLocationSuggestions] = useState<string[]>([])
+    const locationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const searchBarRef = useRef<HTMLDivElement>(null)
 
     // Sync state when URL changes (e.g. category click)
@@ -55,12 +51,36 @@ export default function Navbar() {
         const handler = (e: MouseEvent) => {
             if (searchBarRef.current && !searchBarRef.current.contains(e.target as Node)) {
                 setShowCalendar(false)
-                setShowLocationMap(false)
+                setShowLocationSuggestions(false)
             }
         }
         document.addEventListener("mousedown", handler)
         return () => document.removeEventListener("mousedown", handler)
     }, [])
+
+    const searchLocation = (q: string) => {
+        if (locationDebounceRef.current) clearTimeout(locationDebounceRef.current)
+        if (!q.trim()) { setLocationSuggestions([]); setShowLocationSuggestions(false); return }
+        locationDebounceRef.current = setTimeout(async () => {
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`,
+                    { headers: { "Accept-Language": "pl" } }
+                )
+                const data = await res.json()
+                const results: string[] = data
+                    .filter((item: any) => item.address)
+                    .map((item: any) => {
+                        const city = item.address.city || item.address.town || item.address.village || item.address.municipality || item.address.county || ""
+                        const country = item.address.country || ""
+                        return city ? `${city}, ${country}` : country
+                    })
+                    .filter((s: string, i: number, arr: string[]) => s && arr.indexOf(s) === i)
+                setLocationSuggestions(results)
+                setShowLocationSuggestions(results.length > 0)
+            } catch { setLocationSuggestions([]) }
+        }, 300)
+    }
 
     const handleSearch = () => {
         const params = new URLSearchParams()
@@ -125,21 +145,21 @@ export default function Navbar() {
                             />
 
                             {/* Location input */}
-                            <div 
-                                className="flex items-center border-l border-[#d2d2d7] px-3 gap-1.5 h-full relative cursor-text"
-                                onClick={() => {
-                                    setShowLocationMap(true)
-                                    setShowCalendar(false)
-                                }}
-                            >
+                            <div className="flex items-center border-l border-[#d2d2d7] px-3 gap-1.5 h-full relative cursor-text">
                                 <MapPin size={11} className="text-[#6e6e73] flex-shrink-0" />
                                 <input
                                     type="text"
                                     value={location}
-                                    onChange={e => setLocation(e.target.value)}
+                                    onChange={e => {
+                                        setLocation(e.target.value)
+                                        setShowCalendar(false)
+                                        searchLocation(e.target.value)
+                                    }}
                                     onKeyDown={handleKeyDown}
+                                    onFocus={() => locationSuggestions.length > 0 && setShowLocationSuggestions(true)}
                                     placeholder="Lokalizacja"
                                     className="w-[90px] text-xs text-[#1d1d1f] placeholder-[#6e6e73] outline-none bg-transparent"
+                                    autoComplete="off"
                                 />
                             </div>
 
@@ -148,7 +168,7 @@ export default function Navbar() {
                                 className="flex items-center border-l border-[#d2d2d7] px-3 gap-1.5 h-full cursor-pointer group"
                                 onClick={() => {
                                     setShowCalendar(v => !v)
-                                    setShowLocationMap(false)
+                                    setShowLocationSuggestions(false)
                                 }}
                             >
                                 <CalendarDays size={11} className="text-[#6e6e73] flex-shrink-0" />
@@ -208,20 +228,29 @@ export default function Navbar() {
                             </motion.div>
                         )}
                         
-                        {/* Floating location map popover */}
-                        {showLocationMap && (
+                        {/* Location suggestions dropdown */}
+                        {showLocationSuggestions && locationSuggestions.length > 0 && (
                             <motion.div
                                 initial={{ opacity: 0, y: 6, scale: 0.97 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 transition={{ duration: 0.15 }}
-                                className="absolute top-[48px] left-1/2 -translate-x-1/2 z-[100] w-[400px] bg-white rounded-[20px] shadow-2xl border border-black/[0.08] p-3"
+                                className="absolute top-[48px] left-1/3 z-[100] w-[280px] bg-white rounded-[16px] shadow-2xl border border-black/[0.08] overflow-hidden"
                             >
-                                <MapPicker 
-                                    value={location}
-                                    onChange={(val) => {
-                                        setLocation(val)
-                                    }}
-                                />
+                                {locationSuggestions.map((s, i) => (
+                                    <button
+                                        key={i}
+                                        type="button"
+                                        onMouseDown={() => {
+                                            setLocation(s)
+                                            setLocationSuggestions([])
+                                            setShowLocationSuggestions(false)
+                                        }}
+                                        className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-[#f5f5f7] transition-colors text-[13px] text-[#1d1d1f] border-b border-black/[0.04] last:border-0"
+                                    >
+                                        <MapPin size={13} className="text-[#6e6e73] shrink-0" />
+                                        {s}
+                                    </button>
+                                ))}
                             </motion.div>
                         )}
                     </div>

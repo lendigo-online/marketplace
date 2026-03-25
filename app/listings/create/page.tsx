@@ -5,12 +5,7 @@ import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 import { motion } from "framer-motion"
 import { CheckCircle2, Tag, MapPin, DollarSign, Image as ImageIcon, AlignLeft } from "lucide-react"
-import dynamic from "next/dynamic"
-
-const MapPicker = dynamic(() => import("@/components/MapPicker"), {
-    ssr: false,
-    loading: () => <div className="h-[300px] w-full bg-black/[0.04] rounded-2xl animate-pulse" />
-})
+import LocationSearch from "@/components/LocationSearch"
 
 const categories = [
     "Elektronika", "Rowery", "Narzędzia", "Foto/Video",
@@ -28,8 +23,8 @@ export default function CreateListingPage() {
         location: "",
         category: ""
     })
-    const [imageFile, setImageFile] = useState<File | null>(null)
-    const [imagePreview, setImagePreview] = useState<string | null>(null)
+    const [imageFiles, setImageFiles] = useState<File[]>([])
+    const [imagePreviews, setImagePreviews] = useState<string[]>([])
 
     const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -37,29 +32,27 @@ export default function CreateListingPage() {
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!imageFile) {
-            toast.error("Wybierz zdjęcie przedmiotu.")
+        if (imageFiles.length === 0) {
+            toast.error("Dodaj przynajmniej jedno zdjęcie.")
             return
         }
         setIsLoading(true)
 
         try {
-            // Upload image first
-            const fileData = new FormData()
-            fileData.append("file", imageFile)
-            const uploadRes = await fetch("/api/upload", {
-                method: "POST",
-                body: fileData
-            })
-            
-            if (!uploadRes.ok) {
-                toast.error("Nie udało się przesłać zdjęcia.")
-                setIsLoading(false)
-                return
+            // Upload all images
+            const images: string[] = []
+            for (const file of imageFiles) {
+                const fileData = new FormData()
+                fileData.append("file", file)
+                const uploadRes = await fetch("/api/upload", { method: "POST", body: fileData })
+                if (!uploadRes.ok) {
+                    toast.error("Nie udało się przesłać zdjęcia.")
+                    setIsLoading(false)
+                    return
+                }
+                const { url } = await uploadRes.json()
+                images.push(url)
             }
-            
-            const uploadData = await uploadRes.json()
-            const imageSrc = uploadData.url
 
             // Create listing
             const response = await fetch("/api/listings", {
@@ -67,7 +60,7 @@ export default function CreateListingPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     ...formData,
-                    imageSrc,
+                    images,
                     pricePerDay: parseFloat(formData.pricePerDay)
                 })
             })
@@ -99,8 +92,8 @@ export default function CreateListingPage() {
         },
         {
             id: "location", label: "Lokalizacja", icon: MapPin,
-            type: "text", placeholder: "np. Warszawa, Mokotów",
-            description: "Miasto lub dzielnica"
+            type: "location", placeholder: "np. Warszawa, Mokotów",
+            description: "Wyszukaj miasto lub dzielnicę"
         },
         {
             id: "pricePerDay", label: "Cena za dzień (PLN)", icon: DollarSign,
@@ -173,6 +166,12 @@ export default function CreateListingPage() {
                                     rows={4}
                                     className="apple-input resize-none"
                                 />
+                            ) : type === "location" ? (
+                                <LocationSearch
+                                    value={formData.location}
+                                    onChange={(val) => setFormData(prev => ({ ...prev, location: val }))}
+                                    placeholder={placeholder}
+                                />
                             ) : (
                                 <input
                                     id={id}
@@ -188,14 +187,6 @@ export default function CreateListingPage() {
                                     className="apple-input"
                                 />
                             )}
-                            {id === "location" && (
-                                <div className="mt-4">
-                                    <MapPicker 
-                                        value={formData.location}
-                                        onChange={(val) => setFormData(prev => ({ ...prev, location: val }))}
-                                    />
-                                </div>
-                            )}
                         </div>
                     ))}
 
@@ -207,17 +198,16 @@ export default function CreateListingPage() {
                                 Zdjęcie
                             </label>
                         </div>
-                        <p className="text-[11px] text-[#6e6e73] mb-3">Wybierz zdjęcie ze swojego urządzenia</p>
+                        <p className="text-[11px] text-[#6e6e73] mb-3">Możesz dodać do 8 zdjęć</p>
                         <input
                             type="file"
                             accept="image/*"
+                            multiple
                             disabled={isLoading}
                             onChange={(e) => {
-                                const file = e.target.files?.[0]
-                                if (file) {
-                                    setImageFile(file)
-                                    setImagePreview(URL.createObjectURL(file))
-                                }
+                                const files = Array.from(e.target.files || []).slice(0, 8)
+                                setImageFiles(files)
+                                setImagePreviews(files.map(f => URL.createObjectURL(f)))
                             }}
                             className="block w-full text-sm text-[#6e6e73]
                                 file:mr-4 file:py-2 file:px-4
@@ -226,9 +216,18 @@ export default function CreateListingPage() {
                                 file:bg-[#1d1d1f] file:text-white
                                 hover:file:bg-black transition-colors cursor-pointer"
                         />
-                        {imagePreview && (
-                            <div className="mt-4 rounded-xl overflow-hidden border border-black/[0.04]">
-                                <img src={imagePreview} alt="Preview" className="w-full h-auto object-cover max-h-[300px]" />
+                        {imagePreviews.length > 0 && (
+                            <div className="mt-4 grid grid-cols-3 gap-2">
+                                {imagePreviews.map((src, i) => (
+                                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-black/[0.04]">
+                                        <img src={src} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                                        {i === 0 && (
+                                            <span className="absolute top-1.5 left-1.5 text-[9px] font-semibold bg-black/60 text-white px-1.5 py-0.5 rounded-full">
+                                                Główne
+                                            </span>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>

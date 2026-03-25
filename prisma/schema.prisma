@@ -29,7 +29,7 @@ model Listing {
   description   String
   pricePerDay   Float
   location      String
-  imageSrc      String
+  images        String[]
   category      String
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
