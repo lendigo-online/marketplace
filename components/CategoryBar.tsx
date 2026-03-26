@@ -11,27 +11,23 @@ import {
     Shirt,
     Tent,
     Car,
-    Dog,
     Gamepad2,
     Waves,
-    Dumbbell,
     LayoutGrid,
 } from "lucide-react"
 
 const categories = [
     { label: "Wszystkie", icon: LayoutGrid },
     { label: "Elektronika", icon: Laptop },
-    { label: "Rowery", icon: Bike },
     { label: "Narzędzia", icon: Wrench },
-    { label: "Foto/Video", icon: Camera },
-    { label: "Muzyka", icon: Music },
-    { label: "Odzież", icon: Shirt },
-    { label: "Camping", icon: Tent },
     { label: "Samochody", icon: Car },
-    { label: "Zwierzęta", icon: Dog },
-    { label: "Gry", icon: Gamepad2 },
+    { label: "Rowery", icon: Bike },
+    { label: "Foto/Video", icon: Camera },
+    { label: "Camping", icon: Tent },
+    { label: "Muzyka", icon: Music },
     { label: "Sporty wodne", icon: Waves },
-    { label: "Fitness", icon: Dumbbell },
+    { label: "Odzież", icon: Shirt },
+    { label: "Gry", icon: Gamepad2 },
 ]
 
 export default function CategoryBar() {

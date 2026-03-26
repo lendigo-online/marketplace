@@ -4,7 +4,10 @@ import Link from "next/link"
 import UserMenu from "./UserMenu"
 import CategoryBar from "./CategoryBar"
 import { motion } from "framer-motion"
-import { Search, MapPin, CalendarDays, X } from "lucide-react"
+import {
+    Search, MapPin, CalendarDays, X, SlidersHorizontal, ChevronDown,
+    LayoutGrid, Laptop, Bike, Wrench, Camera, Music, Shirt, Tent, Car, Gamepad2, Waves
+} from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
 import { format } from "date-fns"
@@ -12,6 +15,57 @@ import { pl } from "date-fns/locale"
 import { usePathname } from "next/navigation"
 import { DayPicker, DateRange } from "react-day-picker"
 import "react-day-picker/dist/style.css"
+
+const categories = [
+    { label: "Wszystkie", icon: LayoutGrid },
+    { label: "Elektronika", icon: Laptop },
+    { label: "Narzędzia", icon: Wrench },
+    { label: "Samochody", icon: Car },
+    { label: "Rowery", icon: Bike },
+    { label: "Foto/Video", icon: Camera },
+    { label: "Camping", icon: Tent },
+    { label: "Muzyka", icon: Music },
+    { label: "Sporty wodne", icon: Waves },
+    { label: "Odzież", icon: Shirt },
+    { label: "Gry", icon: Gamepad2 },
+]
+
+const categorySpecificFilters: Record<string, Array<{ key: string; label: string; options?: string[]; type?: string; keyMin?: string; keyMax?: string }>> = {
+    "Samochody": [
+        { key: "paliwo", label: "Paliwo", options: ["Benzyna", "Diesel", "Elektryczny", "Hybryda", "LPG"] },
+        { key: "skrzynia", label: "Skrzynia biegów", options: ["Manualna", "Automatyczna"] },
+        { key: "moc", label: "Moc silnika (KM)", type: "range", keyMin: "mocMin", keyMax: "mocMax" },
+    ],
+    "Elektronika": [
+        { key: "typ", label: "Typ urządzenia", options: ["Laptop", "Tablet", "Smartfon", "Monitor", "Inne"] },
+    ],
+    "Rowery": [
+        { key: "typ_roweru", label: "Typ roweru", options: ["Górski", "Szosowy", "Miejski", "Elektryczny", "Trekkingowy", "BMX"] },
+    ],
+    "Narzędzia": [
+        { key: "typ_narzedzi", label: "Typ", options: ["Elektryczne", "Ręczne", "Ogrodowe", "Budowlane", "Pneumatyczne"] },
+    ],
+    "Foto/Video": [
+        { key: "typ_foto", label: "Typ sprzętu", options: ["Aparat", "Kamera", "Obiektyw", "Drone", "Statyw", "Oświetlenie"] },
+    ],
+    "Muzyka": [
+        { key: "typ_muzyka", label: "Typ sprzętu", options: ["Gitara", "Klawisze", "Perkusja", "Wzmacniacz", "Mikrofon", "DJ"] },
+    ],
+    "Fitness": [
+        { key: "typ_fitness", label: "Typ sprzętu", options: ["Siłownia", "Cardio", "Joga", "Rower stacjonarny", "Bieżnia"] },
+    ],
+    "Camping": [
+        { key: "typ_camping", label: "Typ sprzętu", options: ["Namiot", "Śpiwór", "Kuchnia turystyczna", "Plecak", "Latarka"] },
+    ],
+    "Odzież": [
+        { key: "plec", label: "Płeć", options: ["Damska", "Męska", "Unisex"] },
+        { key: "rozmiar", label: "Rozmiar", options: ["XS", "S", "M", "L", "XL", "XXL"] },
+    ],
+}
+
+export const ALL_CATEGORY_FILTER_KEYS = Object.values(categorySpecificFilters).flatMap(f =>
+    f.flatMap(x => x.type === "range" ? [x.keyMin!, x.keyMax!] : [x.key])
+)
 
 export default function Navbar() {
     const router = useRouter()
@@ -22,6 +76,17 @@ export default function Navbar() {
 
     const [query, setQuery] = useState(searchParams.get("q") || "")
     const [location, setLocation] = useState(searchParams.get("location") || "")
+    const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "Wszystkie")
+    const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") || "")
+    const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "")
+    const [categoryFilters, setCategoryFilters] = useState<Record<string, string>>(() => {
+        const obj: Record<string, string> = {}
+        ALL_CATEGORY_FILTER_KEYS.forEach(key => {
+            const val = searchParams.get(key)
+            if (val) obj[key] = val
+        })
+        return obj
+    })
     const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
         const from = searchParams.get("from")
         const to = searchParams.get("to")
@@ -29,29 +94,41 @@ export default function Navbar() {
         if (from) return { from: new Date(from), to: undefined }
         return undefined
     })
+
     const [showCalendar, setShowCalendar] = useState(false)
+    const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+    const [showFilterPanel, setShowFilterPanel] = useState(false)
     const [showLocationSuggestions, setShowLocationSuggestions] = useState(false)
-    const [locationSuggestions, setLocationSuggestions] = useState<string[]>([])
+    const [locationSuggestions, setLocationSuggestions] = useState<{ label: string; sub: string }[]>([])
     const locationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const searchBarRef = useRef<HTMLDivElement>(null)
 
-    // Sync state when URL changes (e.g. category click)
     useEffect(() => {
         setQuery(searchParams.get("q") || "")
         setLocation(searchParams.get("location") || "")
+        setSelectedCategory(searchParams.get("category") || "Wszystkie")
+        setMinPrice(searchParams.get("minPrice") || "")
+        setMaxPrice(searchParams.get("maxPrice") || "")
         const from = searchParams.get("from")
         const to = searchParams.get("to")
         if (from && to) setDateRange({ from: new Date(from), to: new Date(to) })
         else if (from) setDateRange({ from: new Date(from), to: undefined })
         else setDateRange(undefined)
+        const obj: Record<string, string> = {}
+        ALL_CATEGORY_FILTER_KEYS.forEach(key => {
+            const val = searchParams.get(key)
+            if (val) obj[key] = val
+        })
+        setCategoryFilters(obj)
     }, [searchParams])
 
-    // Close popovers on outside click
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (searchBarRef.current && !searchBarRef.current.contains(e.target as Node)) {
                 setShowCalendar(false)
                 setShowLocationSuggestions(false)
+                setShowCategoryDropdown(false)
+                setShowFilterPanel(false)
             }
         }
         document.addEventListener("mousedown", handler)
@@ -64,34 +141,58 @@ export default function Navbar() {
         locationDebounceRef.current = setTimeout(async () => {
             try {
                 const res = await fetch(
-                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`,
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=10&addressdetails=1&countrycodes=pl`,
                     { headers: { "Accept-Language": "pl" } }
                 )
                 const data = await res.json()
-                const results: string[] = data
-                    .filter((item: any) => item.address)
-                    .map((item: any) => {
-                        const city = item.address.city || item.address.town || item.address.village || item.address.municipality || item.address.county || ""
-                        const country = item.address.country || ""
-                        return city ? `${city}, ${country}` : country
-                    })
-                    .filter((s: string, i: number, arr: string[]) => s && arr.indexOf(s) === i)
+                const seen = new Set<string>()
+                const results: { label: string; sub: string }[] = []
+
+                for (const item of data) {
+                    if (!item.address) continue
+                    // tylko miejscowości, nie ulice/budynki
+                    if (item.class !== "place" && item.class !== "boundary") continue
+
+                    const addr = item.address
+                    const city =
+                        addr.city || addr.town || addr.village ||
+                        addr.municipality || addr.hamlet || addr.suburb || ""
+                    if (!city) continue
+                    if (seen.has(city.toLowerCase())) continue
+                    seen.add(city.toLowerCase())
+
+                    const sub = addr.state || addr.county || ""
+
+                    results.push({ label: city, sub })
+                    if (results.length >= 6) break
+                }
+
                 setLocationSuggestions(results)
                 setShowLocationSuggestions(results.length > 0)
             } catch { setLocationSuggestions([]) }
         }, 300)
     }
 
-    const handleSearch = () => {
+    const buildParams = () => {
         const params = new URLSearchParams()
         if (query.trim()) params.set("q", query.trim())
         if (location.trim()) params.set("location", location.trim())
-        const category = searchParams.get("category")
-        if (category) params.set("category", category)
+        if (selectedCategory && selectedCategory !== "Wszystkie") params.set("category", selectedCategory)
         if (dateRange?.from) params.set("from", format(dateRange.from, "yyyy-MM-dd"))
         if (dateRange?.to) params.set("to", format(dateRange.to, "yyyy-MM-dd"))
-        router.push(`/?${params.toString()}`)
+        if (minPrice) params.set("minPrice", minPrice)
+        if (maxPrice) params.set("maxPrice", maxPrice)
+        Object.entries(categoryFilters).forEach(([key, val]) => {
+            if (val) params.set(key, val)
+        })
+        return params
+    }
+
+    const handleSearch = () => {
+        router.push(`/?${buildParams().toString()}`)
         setShowCalendar(false)
+        setShowFilterPanel(false)
+        setShowCategoryDropdown(false)
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -103,6 +204,13 @@ export default function Navbar() {
         setDateRange(undefined)
     }
 
+    const toggleCategoryFilter = (key: string, option: string) => {
+        setCategoryFilters(prev => ({
+            ...prev,
+            [key]: prev[key] === option ? "" : option,
+        }))
+    }
+
     const dateLabel = dateRange?.from
         ? dateRange.to
             ? `${format(dateRange.from, "d MMM", { locale: pl })} – ${format(dateRange.to, "d MMM", { locale: pl })}`
@@ -112,9 +220,15 @@ export default function Navbar() {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
+    const activeCatEntry = categories.find(c => c.label === selectedCategory)
+    const CatIcon = activeCatEntry?.icon ?? LayoutGrid
+
+    const activeFiltersCount = [minPrice, maxPrice, ...Object.values(categoryFilters).filter(Boolean)].filter(Boolean).length
+
+    const currentCategoryFilters = categorySpecificFilters[selectedCategory] ?? []
+
     return (
         <>
-            {/* Main nav bar */}
             <motion.div
                 initial={{ y: -80, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -131,8 +245,25 @@ export default function Navbar() {
                     </Link>
 
                     {/* Search Bar */}
-                    <div className="hidden md:flex flex-1 absolute left-1/2 -translate-x-1/2 max-w-2xl justify-center z-10" ref={searchBarRef}>
+                    <div className="hidden md:flex flex-1 absolute left-1/2 -translate-x-1/2 w-[620px] justify-center z-10" ref={searchBarRef}>
                         <div className="w-full flex flex-row items-center border border-[#d2d2d7] rounded-full bg-white shadow-sm hover:shadow-md transition-shadow duration-200 overflow-visible h-[40px]">
+
+                            {/* Category selector */}
+                            <button
+                                onClick={() => {
+                                    setShowCategoryDropdown(v => !v)
+                                    setShowCalendar(false)
+                                    setShowFilterPanel(false)
+                                    setShowLocationSuggestions(false)
+                                }}
+                                className="flex items-center gap-1.5 px-3 h-full border-r border-[#d2d2d7] hover:bg-[#f5f5f7] rounded-l-full transition-colors flex-shrink-0 group"
+                            >
+                                <CatIcon size={12} className="text-[#6e6e73] group-hover:text-[#1d1d1f] transition-colors flex-shrink-0" />
+                                <span className="text-xs text-[#1d1d1f] font-medium max-w-[80px] truncate">
+                                    {selectedCategory === "Wszystkie" ? "Kategoria" : selectedCategory}
+                                </span>
+                                <ChevronDown size={10} className="text-[#6e6e73] flex-shrink-0" />
+                            </button>
 
                             {/* Query input */}
                             <input
@@ -141,11 +272,11 @@ export default function Navbar() {
                                 onChange={e => setQuery(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 placeholder="Szukaj rzeczy..."
-                                className="w-[160px] text-xs text-[#1d1d1f] placeholder-[#6e6e73] px-4 outline-none bg-transparent"
+                                className="flex-1 min-w-0 text-xs text-[#1d1d1f] placeholder-[#6e6e73] px-4 outline-none bg-transparent"
                             />
 
                             {/* Location input */}
-                            <div className="flex items-center border-l border-[#d2d2d7] px-3 gap-1.5 h-full relative cursor-text">
+                            <div className="flex items-center border-l border-[#d2d2d7] px-3 gap-1.5 h-full relative cursor-text flex-shrink-0">
                                 <MapPin size={11} className="text-[#6e6e73] flex-shrink-0" />
                                 <input
                                     type="text"
@@ -158,17 +289,19 @@ export default function Navbar() {
                                     onKeyDown={handleKeyDown}
                                     onFocus={() => locationSuggestions.length > 0 && setShowLocationSuggestions(true)}
                                     placeholder="Lokalizacja"
-                                    className="w-[90px] text-xs text-[#1d1d1f] placeholder-[#6e6e73] outline-none bg-transparent"
+                                    className="w-[80px] text-xs text-[#1d1d1f] placeholder-[#6e6e73] outline-none bg-transparent"
                                     autoComplete="off"
                                 />
                             </div>
 
                             {/* Date picker trigger */}
                             <div
-                                className="flex items-center border-l border-[#d2d2d7] px-3 gap-1.5 h-full cursor-pointer group"
+                                className="flex items-center border-l border-[#d2d2d7] px-3 gap-1.5 h-full cursor-pointer group flex-shrink-0"
                                 onClick={() => {
                                     setShowCalendar(v => !v)
                                     setShowLocationSuggestions(false)
+                                    setShowCategoryDropdown(false)
+                                    setShowFilterPanel(false)
                                 }}
                             >
                                 <CalendarDays size={11} className="text-[#6e6e73] flex-shrink-0" />
@@ -176,25 +309,186 @@ export default function Navbar() {
                                     {dateLabel ?? "Termin"}
                                 </span>
                                 {dateLabel && (
-                                    <button
-                                        onClick={clearDates}
-                                        className="ml-1 text-[#6e6e73] hover:text-[#1d1d1f]"
-                                    >
+                                    <button onClick={clearDates} className="ml-1 text-[#6e6e73] hover:text-[#1d1d1f]">
                                         <X size={10} />
                                     </button>
                                 )}
                             </div>
 
+                            {/* Filter button */}
+                            <button
+                                onClick={() => {
+                                    setShowFilterPanel(v => !v)
+                                    setShowCalendar(false)
+                                    setShowCategoryDropdown(false)
+                                    setShowLocationSuggestions(false)
+                                }}
+                                className={`flex items-center gap-1.5 border-l border-[#d2d2d7] px-3 h-full transition-colors flex-shrink-0 relative ${showFilterPanel ? "bg-[#f5f5f7]" : "hover:bg-[#f5f5f7]"}`}
+                            >
+                                <SlidersHorizontal size={11} className="text-[#6e6e73] flex-shrink-0" />
+                                <span className="text-xs text-[#6e6e73]">Filtry</span>
+                                {activeFiltersCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#1d1d1f] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                        {activeFiltersCount}
+                                    </span>
+                                )}
+                            </button>
+
                             {/* Search button */}
                             <button
                                 onClick={handleSearch}
-                                className="bg-[#1d1d1f] rounded-full p-[7px] mr-1.5 flex-shrink-0 hover:bg-[#3a3a3c] transition-colors"
+                                className="bg-[#1d1d1f] rounded-full p-[7px] mr-1.5 ml-1.5 flex-shrink-0 hover:bg-[#3a3a3c] transition-colors"
                             >
                                 <Search size={10} strokeWidth={3} className="text-white" />
                             </button>
                         </div>
 
-                        {/* Floating calendar popover */}
+                        {/* Category dropdown */}
+                        {showCategoryDropdown && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                transition={{ duration: 0.15 }}
+                                className="absolute top-[48px] left-0 z-[100] w-[200px] bg-white rounded-[16px] shadow-2xl border border-black/[0.08] overflow-hidden"
+                            >
+                                {categories.map(({ label, icon: Icon }) => (
+                                    <button
+                                        key={label}
+                                        onMouseDown={() => {
+                                            setSelectedCategory(label)
+                                            setCategoryFilters({})
+                                            setShowCategoryDropdown(false)
+                                        }}
+                                        className={`flex items-center gap-2.5 w-full px-4 py-2.5 text-left hover:bg-[#f5f5f7] transition-colors text-[13px] border-b border-black/[0.04] last:border-0 ${selectedCategory === label ? "text-[#1d1d1f] font-medium" : "text-[#6e6e73]"}`}
+                                    >
+                                        <Icon size={14} className={selectedCategory === label ? "text-[#1d1d1f]" : "text-[#6e6e73]"} />
+                                        {label}
+                                        {selectedCategory === label && (
+                                            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#1d1d1f]" />
+                                        )}
+                                    </button>
+                                ))}
+                            </motion.div>
+                        )}
+
+                        {/* Filter panel */}
+                        {showFilterPanel && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                transition={{ duration: 0.15 }}
+                                className="absolute top-[48px] left-1/2 -translate-x-1/2 z-[100] w-[400px] bg-white rounded-[20px] shadow-2xl border border-black/[0.08] overflow-hidden"
+                            >
+                            <div className="p-5">
+                                {/* Price range */}
+                                <div className="mb-5">
+                                    <h3 className="text-[13px] font-semibold text-[#1d1d1f] mb-3">Zakres cenowy (zł/dzień)</h3>
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            value={minPrice}
+                                            onChange={e => setMinPrice(e.target.value)}
+                                            placeholder="Od"
+                                            className="flex-1 border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
+                                        />
+                                        <span className="text-[#6e6e73] text-[11px] flex-shrink-0">–</span>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            value={maxPrice}
+                                            onChange={e => setMaxPrice(e.target.value)}
+                                            placeholder="Do"
+                                            className="flex-1 border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
+                                        />
+                                        {(minPrice || maxPrice) && (
+                                            <button onClick={() => { setMinPrice(""); setMaxPrice("") }} className="text-[#6e6e73] hover:text-[#1d1d1f]">
+                                                <X size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Category-specific filters */}
+                                {currentCategoryFilters.length > 0 && (
+                                    <div className="border-t border-black/[0.06] pt-4 space-y-4">
+                                        <h3 className="text-[13px] font-semibold text-[#1d1d1f]">
+                                            Filtry: {selectedCategory}
+                                        </h3>
+                                        {currentCategoryFilters.map(filter => (
+                                            <div key={filter.key}>
+                                                <p className="text-[11px] font-medium text-[#6e6e73] uppercase tracking-wide mb-2">
+                                                    {filter.label}
+                                                </p>
+                                                {filter.type === "range" ? (
+                                                    <div className="flex items-center gap-3">
+                                                        <input
+                                                            type="number"
+                                                            min={0}
+                                                            placeholder="Od"
+                                                            value={categoryFilters[filter.keyMin!] || ""}
+                                                            onChange={e => setCategoryFilters(prev => ({ ...prev, [filter.keyMin!]: e.target.value }))}
+                                                            className="w-[90px] border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
+                                                        />
+                                                        <span className="text-[#6e6e73] text-[11px]">–</span>
+                                                        <input
+                                                            type="number"
+                                                            min={0}
+                                                            placeholder="Do"
+                                                            value={categoryFilters[filter.keyMax!] || ""}
+                                                            onChange={e => setCategoryFilters(prev => ({ ...prev, [filter.keyMax!]: e.target.value }))}
+                                                            className="w-[90px] border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
+                                                        />
+                                                        <span className="text-[11px] text-[#6e6e73]">KM</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {filter.options?.map(option => (
+                                                            <button
+                                                                key={option}
+                                                                onClick={() => toggleCategoryFilter(filter.key, option)}
+                                                                className={`px-3 py-1.5 rounded-full text-[12px] border transition-all duration-150 ${
+                                                                    categoryFilters[filter.key] === option
+                                                                        ? "bg-[#1d1d1f] text-white border-[#1d1d1f]"
+                                                                        : "bg-white text-[#1d1d1f] border-[#d2d2d7] hover:border-[#1d1d1f]"
+                                                                }`}
+                                                            >
+                                                                {option}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {currentCategoryFilters.length === 0 && (
+                                    <p className="text-[12px] text-[#6e6e73] border-t border-black/[0.06] pt-4">
+                                        Wybierz kategorię, aby zobaczyć dodatkowe filtry.
+                                    </p>
+                                )}
+
+                                {/* Actions */}
+                                <div className="flex items-center justify-between mt-5 pt-4 border-t border-black/[0.06]">
+                                    <button
+                                        onClick={() => { setMinPrice(""); setMaxPrice(""); setCategoryFilters({}) }}
+                                        className="text-[12px] text-[#6e6e73] hover:text-[#1d1d1f] underline"
+                                    >
+                                        Wyczyść filtry
+                                    </button>
+                                    <button
+                                        onClick={handleSearch}
+                                        className="bg-[#1d1d1f] text-white text-[12px] font-semibold px-4 py-1.5 rounded-full hover:bg-black transition-colors"
+                                    >
+                                        Zastosuj
+                                    </button>
+                                </div>
+                            </div>
+                            </motion.div>
+                        )}
+
+                        {/* Calendar */}
                         {showCalendar && (
                             <motion.div
                                 initial={{ opacity: 0, y: 6, scale: 0.97 }}
@@ -212,43 +506,40 @@ export default function Navbar() {
                                     locale={pl}
                                 />
                                 <div className="flex items-center justify-between px-2 pt-2 border-t border-black/[0.06]">
-                                    <button
-                                        onClick={() => setDateRange(undefined)}
-                                        className="text-[12px] text-[#6e6e73] hover:text-[#1d1d1f] underline"
-                                    >
+                                    <button onClick={() => setDateRange(undefined)} className="text-[12px] text-[#6e6e73] hover:text-[#1d1d1f] underline">
                                         Wyczyść
                                     </button>
-                                    <button
-                                        onClick={handleSearch}
-                                        className="bg-[#1d1d1f] text-white text-[12px] font-semibold px-4 py-1.5 rounded-full hover:bg-black transition-colors"
-                                    >
+                                    <button onClick={handleSearch} className="bg-[#1d1d1f] text-white text-[12px] font-semibold px-4 py-1.5 rounded-full hover:bg-black transition-colors">
                                         Zastosuj
                                     </button>
                                 </div>
                             </motion.div>
                         )}
-                        
-                        {/* Location suggestions dropdown */}
+
+                        {/* Location suggestions */}
                         {showLocationSuggestions && locationSuggestions.length > 0 && (
                             <motion.div
                                 initial={{ opacity: 0, y: 6, scale: 0.97 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 transition={{ duration: 0.15 }}
-                                className="absolute top-[48px] left-1/3 z-[100] w-[280px] bg-white rounded-[16px] shadow-2xl border border-black/[0.08] overflow-hidden"
+                                className="absolute top-[48px] left-1/3 z-[100] w-[260px] bg-white rounded-[16px] shadow-2xl border border-black/[0.08] overflow-hidden"
                             >
                                 {locationSuggestions.map((s, i) => (
                                     <button
                                         key={i}
                                         type="button"
                                         onMouseDown={() => {
-                                            setLocation(s)
+                                            setLocation(s.label)
                                             setLocationSuggestions([])
                                             setShowLocationSuggestions(false)
                                         }}
-                                        className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-[#f5f5f7] transition-colors text-[13px] text-[#1d1d1f] border-b border-black/[0.04] last:border-0"
+                                        className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-[#f5f5f7] transition-colors border-b border-black/[0.04] last:border-0"
                                     >
                                         <MapPin size={13} className="text-[#6e6e73] shrink-0" />
-                                        {s}
+                                        <div>
+                                            <p className="text-[13px] text-[#1d1d1f]">{s.label}</p>
+                                            {s.sub && <p className="text-[11px] text-[#6e6e73]">{s.sub}</p>}
+                                        </div>
                                     </button>
                                 ))}
                             </motion.div>

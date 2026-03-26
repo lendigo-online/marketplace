@@ -8,27 +8,38 @@ import PaintSplat from "@/components/PaintSplat"
 
 export const revalidate = 0
 
+const CATEGORY_FILTER_KEYS = ["paliwo", "skrzynia", "stan", "typ", "typ_roweru", "typ_narzedzi", "typ_foto", "typ_muzyka", "typ_fitness", "typ_camping", "plec", "rozmiar"]
+
 interface HomeProps {
-    searchParams: {
-        category?: string
-        q?: string
-        location?: string
-        from?: string
-        to?: string
-    }
+    searchParams: Record<string, string | undefined>
 }
 
 export default async function Home({ searchParams }: HomeProps) {
-    const { category, q, location, from, to } = searchParams
+    const { category, q, location, from, to, minPrice, maxPrice } = searchParams
 
     const fromDate = from ? new Date(from) : undefined
     const toDate = to ? new Date(to) : undefined
+    const minPriceVal = minPrice ? parseFloat(minPrice) : undefined
+    const maxPriceVal = maxPrice ? parseFloat(maxPrice) : undefined
+
+    const categoryFilterConditions = CATEGORY_FILTER_KEYS
+        .filter(key => searchParams[key])
+        .map(key => ({ description: { contains: searchParams[key]!, mode: "insensitive" as const } }))
+
+    const mocMin = searchParams["mocMin"] ? parseInt(searchParams["mocMin"]) : undefined
+    const mocMax = searchParams["mocMax"] ? parseInt(searchParams["mocMax"]) : undefined
 
     const listings = await prisma.listing.findMany({
         where: {
             ...(category && category !== "Wszystkie" ? { category } : {}),
             ...(q ? { title: { contains: q } } : {}),
             ...(location ? { location: { contains: location } } : {}),
+            ...(minPriceVal !== undefined || maxPriceVal !== undefined ? {
+                pricePerDay: {
+                    ...(minPriceVal !== undefined ? { gte: minPriceVal } : {}),
+                    ...(maxPriceVal !== undefined ? { lte: maxPriceVal } : {}),
+                }
+            } : {}),
             // Exclude listings with conflicting reservations in the date range
             ...(fromDate && toDate ? {
                 reservations: {
@@ -41,11 +52,22 @@ export default async function Home({ searchParams }: HomeProps) {
                     }
                 }
             } : {}),
+            ...(categoryFilterConditions.length > 0 ? { AND: categoryFilterConditions } : {}),
         },
         orderBy: { createdAt: "desc" }
     })
 
-    const safeListings: SafeListing[] = listings.map((listing) => ({
+    const filteredListings = listings.filter(listing => {
+        if (mocMin === undefined && mocMax === undefined) return true
+        const match = listing.description.match(/(\d+)\s*KM/i)
+        if (!match) return false
+        const power = parseInt(match[1])
+        if (mocMin !== undefined && power < mocMin) return false
+        if (mocMax !== undefined && power > mocMax) return false
+        return true
+    })
+
+    const safeListings: SafeListing[] = filteredListings.map((listing) => ({
         ...listing,
         createdAt: listing.createdAt.toISOString(),
         updatedAt: listing.updatedAt.toISOString(),
@@ -104,7 +126,7 @@ export default async function Home({ searchParams }: HomeProps) {
                             {(q || location) && ` · ${[q && `"${q}"`, location && `w ${location}`].filter(Boolean).join(", ")}`}
                         </p>
                     </div>
-                    {(category || q || location) && (
+                    {(category || q || location || minPrice || maxPrice || CATEGORY_FILTER_KEYS.some(k => searchParams[k])) && (
                         <Link href="/" className="text-[13px] text-[#0071e3] hover:underline">
                             Wyczyść filtry
                         </Link>
@@ -117,14 +139,14 @@ export default async function Home({ searchParams }: HomeProps) {
                             <Tag size={24} className="text-[#6e6e73]" />
                         </div>
                         <h2 className="text-[22px] font-semibold text-[#1d1d1f]">
-                            {(category || q || location) ? "Brak wyników" : "Brak ogłoszeń"}
+                            {(category || q || location || minPrice || maxPrice) ? "Brak wyników" : "Brak ogłoszeń"}
                         </h2>
                         <p className="text-[#6e6e73] mt-2 text-[15px]">
-                            {(category || q || location)
+                            {(category || q || location || minPrice || maxPrice)
                                 ? "Spróbuj zmienić filtry lub wyszukaj coś innego."
                                 : "Bądź pierwszy — dodaj swoje ogłoszenie!"}
                         </p>
-                        {!(category || q || location) && (
+                        {!(category || q || location || minPrice || maxPrice) && (
                             <Link href="/listings/create" className="btn-apple-primary mt-6">
                                 Dodaj ogłoszenie
                             </Link>
