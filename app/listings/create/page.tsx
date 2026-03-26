@@ -3,15 +3,48 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
-import { motion } from "framer-motion"
-import { CheckCircle2, Tag, MapPin, DollarSign, Image as ImageIcon, AlignLeft } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { CheckCircle2, Tag, MapPin, DollarSign, Image as ImageIcon, AlignLeft, SlidersHorizontal } from "lucide-react"
 import LocationSearch from "@/components/LocationSearch"
 
 const categories = [
-    "Elektronika", "Rowery", "Narzędzia", "Foto/Video",
-    "Muzyka", "Odzież", "Camping", "Samochody",
-    "Gry", "Sporty wodne", "Fitness", "Inne"
+    "Elektronika", "Narzędzia", "Samochody", "Rowery",
+    "Foto/Video", "Camping", "Muzyka",
+    "Sporty wodne", "Odzież", "Gry", "Inne"
 ]
+
+const categorySpecificFilters: Record<string, Array<{ key: string; label: string; options?: string[]; type?: string; unit?: string }>> = {
+    "Samochody": [
+        { key: "paliwo", label: "Paliwo", options: ["Benzyna", "Diesel", "Elektryczny", "Hybryda", "LPG"] },
+        { key: "skrzynia", label: "Skrzynia biegów", options: ["Manualna", "Automatyczna"] },
+        { key: "moc", label: "Moc silnika", type: "number", unit: "KM" },
+    ],
+    "Elektronika": [
+        { key: "typ", label: "Typ urządzenia", options: ["Laptop", "Tablet", "Smartfon", "Monitor", "Inne"] },
+    ],
+    "Rowery": [
+        { key: "typ_roweru", label: "Typ roweru", options: ["Górski", "Szosowy", "Miejski", "Elektryczny", "Trekkingowy", "BMX"] },
+    ],
+    "Narzędzia": [
+        { key: "typ_narzedzi", label: "Typ", options: ["Elektryczne", "Ręczne", "Ogrodowe", "Budowlane", "Pneumatyczne"] },
+    ],
+    "Foto/Video": [
+        { key: "typ_foto", label: "Typ sprzętu", options: ["Aparat", "Kamera", "Obiektyw", "Drone", "Statyw", "Oświetlenie"] },
+    ],
+    "Muzyka": [
+        { key: "typ_muzyka", label: "Typ sprzętu", options: ["Gitara", "Klawisze", "Perkusja", "Wzmacniacz", "Mikrofon", "DJ"] },
+    ],
+    "Fitness": [
+        { key: "typ_fitness", label: "Typ sprzętu", options: ["Siłownia", "Cardio", "Joga", "Rower stacjonarny", "Bieżnia"] },
+    ],
+    "Camping": [
+        { key: "typ_camping", label: "Typ sprzętu", options: ["Namiot", "Śpiwór", "Kuchnia turystyczna", "Plecak", "Latarka"] },
+    ],
+    "Odzież": [
+        { key: "plec", label: "Płeć", options: ["Damska", "Męska", "Unisex"] },
+        { key: "rozmiar", label: "Rozmiar", options: ["XS", "S", "M", "L", "XL", "XXL"] },
+    ],
+}
 
 export default function CreateListingPage() {
     const router = useRouter()
@@ -23,11 +56,33 @@ export default function CreateListingPage() {
         location: "",
         category: ""
     })
+    const [categoryFilters, setCategoryFilters] = useState<Record<string, string>>({})
     const [imageFiles, setImageFiles] = useState<File[]>([])
     const [imagePreviews, setImagePreviews] = useState<string[]>([])
 
     const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
+    }
+
+    const selectCategory = (cat: string) => {
+        setFormData(prev => ({ ...prev, category: cat }))
+        setCategoryFilters({})
+    }
+
+    const toggleFilter = (key: string, option: string) => {
+        setCategoryFilters(prev => ({
+            ...prev,
+            [key]: prev[key] === option ? "" : option,
+        }))
+    }
+
+    const buildDescription = () => {
+        const activeFilters = Object.values(categoryFilters).filter(Boolean)
+        if (activeFilters.length === 0) return formData.description
+        const filterLine = activeFilters.join(" | ")
+        return formData.description
+            ? `${formData.description}\n\n${filterLine}`
+            : filterLine
     }
 
     const onSubmit = async (e: React.FormEvent) => {
@@ -39,7 +94,6 @@ export default function CreateListingPage() {
         setIsLoading(true)
 
         try {
-            // Upload all images
             const images: string[] = []
             for (const file of imageFiles) {
                 const fileData = new FormData()
@@ -54,12 +108,12 @@ export default function CreateListingPage() {
                 images.push(url)
             }
 
-            // Create listing
             const response = await fetch("/api/listings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     ...formData,
+                    description: buildDescription(),
                     images,
                     pricePerDay: parseFloat(formData.pricePerDay)
                 })
@@ -72,12 +126,14 @@ export default function CreateListingPage() {
             } else {
                 toast.error("Nie udało się dodać ogłoszenia.")
             }
-        } catch (error) {
+        } catch {
             toast.error("Coś poszło nie tak.")
         } finally {
             setIsLoading(false)
         }
     }
+
+    const currentCategoryFilters = categorySpecificFilters[formData.category] ?? []
 
     const fields = [
         {
@@ -110,7 +166,6 @@ export default function CreateListingPage() {
                 transition={{ duration: 0.4, ease: "easeOut" }}
                 className="max-w-[680px] mx-auto"
             >
-                {/* Header */}
                 <div className="mb-10">
                     <h1 className="text-[36px] font-bold tracking-tighter text-[#1d1d1f]">
                         Dodaj ogłoszenie
@@ -131,7 +186,7 @@ export default function CreateListingPage() {
                                 <button
                                     key={cat}
                                     type="button"
-                                    onClick={() => setFormData(prev => ({ ...prev, category: cat }))}
+                                    onClick={() => selectCategory(cat)}
                                     className={`px-3 py-2 rounded-xl text-[12px] font-medium transition-all duration-150 text-left
                                         ${formData.category === cat
                                             ? "bg-[#1d1d1f] text-white"
@@ -143,6 +198,71 @@ export default function CreateListingPage() {
                             ))}
                         </div>
                     </div>
+
+                    {/* Category-specific filters */}
+                    <AnimatePresence>
+                        {currentCategoryFilters.length > 0 && (
+                            <motion.div
+                                key={formData.category}
+                                initial={{ opacity: 0, y: -8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -8 }}
+                                transition={{ duration: 0.2 }}
+                                className="bg-white rounded-[24px] p-6 shadow-apple-sm border border-black/[0.04]"
+                            >
+                                <div className="flex items-center gap-2 mb-4">
+                                    <SlidersHorizontal size={14} className="text-[#6e6e73]" />
+                                    <span className="text-[12px] font-semibold text-[#6e6e73] uppercase tracking-wide">
+                                        Szczegóły: {formData.category}
+                                    </span>
+                                </div>
+                                <div className="space-y-5">
+                                    {currentCategoryFilters.map(filter => (
+                                        <div key={filter.key}>
+                                            <p className="text-[11px] font-medium text-[#6e6e73] uppercase tracking-wide mb-2">
+                                                {filter.label}
+                                            </p>
+                                            {filter.type === "number" ? (
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        placeholder="np. 150"
+                                                        value={categoryFilters[filter.key] ? categoryFilters[filter.key].replace(/[^\d]/g, "") : ""}
+                                                        onChange={e => setCategoryFilters(prev => ({
+                                                            ...prev,
+                                                            [filter.key]: e.target.value ? `${e.target.value} ${filter.unit}` : ""
+                                                        }))}
+                                                        className="w-[120px] border border-[#d2d2d7] rounded-[10px] px-3 py-2 text-[13px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
+                                                    />
+                                                    {filter.unit && (
+                                                        <span className="text-[13px] text-[#6e6e73]">{filter.unit}</span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-wrap gap-2">
+                                                    {filter.options?.map(option => (
+                                                        <button
+                                                            key={option}
+                                                            type="button"
+                                                            onClick={() => toggleFilter(filter.key, option)}
+                                                            className={`px-3 py-1.5 rounded-full text-[12px] border transition-all duration-150 ${
+                                                                categoryFilters[filter.key] === option
+                                                                    ? "bg-[#1d1d1f] text-white border-[#1d1d1f]"
+                                                                    : "bg-white text-[#1d1d1f] border-[#d2d2d7] hover:border-[#1d1d1f]"
+                                                            }`}
+                                                        >
+                                                            {option}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     {/* Fields */}
                     {fields.map(({ id, label, icon: Icon, type, placeholder, description }) => (
