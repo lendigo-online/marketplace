@@ -11,11 +11,66 @@ import { formatPrice } from "@/lib/utils"
 
 interface ListingCardProps {
     data: SafeListing
+    horizontal?: boolean
 }
 
-export default function ListingCard({ data }: ListingCardProps) {
+export default function ListingCard({ data, horizontal }: ListingCardProps) {
     const router = useRouter()
     const [liked, setLiked] = useState(false)
+
+    if (horizontal) {
+        return (
+            <motion.div
+                onClick={() => router.push(`/listings/${data.id}`)}
+                className="col-span-1 cursor-pointer group"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -2 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+            >
+                <div className="flex flex-row gap-4 w-full bg-white rounded-[18px] shadow-sm border border-[#f0f0f0] overflow-hidden hover:shadow-md transition-shadow duration-200">
+                    {/* Image */}
+                    <div className="relative w-[140px] shrink-0 bg-[#f5f5f7]">
+                        <Image
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            src={data.images?.[0] || "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&q=80"}
+                            alt={data.title}
+                        />
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setLiked(p => !p) }}
+                            className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm hover:scale-110 transition-transform duration-200"
+                        >
+                            <Heart
+                                size={12}
+                                strokeWidth={2}
+                                className={liked ? "fill-red-500 text-red-500" : "text-[#1d1d1f]"}
+                            />
+                        </button>
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex flex-col justify-center gap-1 py-4 pr-4 min-w-0">
+                        <span className="text-[10px] font-semibold text-[#6e6e73] bg-[#f5f5f7] rounded-full px-2 py-0.5 w-fit">
+                            {data.category}
+                        </span>
+                        <div className="font-semibold text-[15px] leading-tight text-[#1d1d1f] truncate tracking-tight mt-0.5">
+                            {data.title}
+                        </div>
+                        <div className="text-[13px] text-[#6e6e73] truncate">
+                            {data.location}
+                        </div>
+                        <div className="flex flex-row items-baseline gap-1 mt-2">
+                            <span className="text-[15px] font-semibold text-[#1d1d1f]">
+                                {formatPrice(data.pricePerDay)}
+                            </span>
+                            <span className="text-[12px] text-[#6e6e73] font-normal">/ dzień</span>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+        )
+    }
 
     return (
         <motion.div

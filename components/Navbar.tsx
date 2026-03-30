@@ -238,7 +238,7 @@ export default function Navbar() {
                 <div className="max-w-[1400px] mx-auto px-6 h-[56px] flex flex-row items-center justify-between gap-4">
 
                     {/* Logo */}
-                    <Link href="/" className="flex-shrink-0">
+                    <Link href="/" className="flex-shrink-0" onClick={() => setQuery("")}>
                         <div className="text-[17px] font-semibold tracking-tight text-[#1d1d1f] select-none">
                             Lend<span className="text-[#6e6e73] font-light">igo</span>
                         </div>
@@ -383,23 +383,23 @@ export default function Navbar() {
                                 {/* Price range */}
                                 <div className="mb-5">
                                     <h3 className="text-[13px] font-semibold text-[#1d1d1f] mb-3">Zakres cenowy (zł/dzień)</h3>
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2">
                                         <input
                                             type="number"
                                             min={0}
                                             value={minPrice}
                                             onChange={e => setMinPrice(e.target.value)}
                                             placeholder="Od"
-                                            className="flex-1 border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
+                                            className="w-0 flex-1 min-w-0 border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
                                         />
-                                        <span className="text-[#6e6e73] text-[11px] flex-shrink-0">–</span>
+                                        <span className="text-[#6e6e73] text-[11px] shrink-0">–</span>
                                         <input
                                             type="number"
                                             min={0}
                                             value={maxPrice}
                                             onChange={e => setMaxPrice(e.target.value)}
                                             placeholder="Do"
-                                            className="flex-1 border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
+                                            className="w-0 flex-1 min-w-0 border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
                                         />
                                         {(minPrice || maxPrice) && (
                                             <button onClick={() => { setMinPrice(""); setMaxPrice("") }} className="text-[#6e6e73] hover:text-[#1d1d1f]">

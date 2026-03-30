@@ -152,13 +152,16 @@ export default async function Home({ searchParams }: HomeProps) {
                             </Link>
                         )}
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
-                        {safeListings.map((listing) => (
-                            <ListingCard key={listing.id} data={listing} />
-                        ))}
-                    </div>
-                )}
+                ) : (() => {
+                    const isSearch = !!(q || location || (category && category !== "Wszystkie") || minPrice || maxPrice || CATEGORY_FILTER_KEYS.some(k => searchParams[k]))
+                    return (
+                        <div className={`grid gap-4 ${isSearch ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"}`}>
+                            {safeListings.map((listing) => (
+                                <ListingCard key={listing.id} data={listing} horizontal={isSearch} />
+                            ))}
+                        </div>
+                    )
+                })()}
             </section>
 
         </div>
