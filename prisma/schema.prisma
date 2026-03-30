@@ -70,3 +70,13 @@ model Review {
   listingId   String
   listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
 }
+
+model EmailVerification {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
