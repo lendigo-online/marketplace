@@ -102,6 +102,15 @@ export default function Navbar() {
     const [locationSuggestions, setLocationSuggestions] = useState<{ label: string; sub: string }[]>([])
     const locationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const searchBarRef = useRef<HTMLDivElement>(null)
+    const mobileSearchRef = useRef<HTMLDivElement>(null)
+    const [isMobile, setIsMobile] = useState(false)
+
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 768)
+        check()
+        window.addEventListener("resize", check)
+        return () => window.removeEventListener("resize", check)
+    }, [])
 
     useEffect(() => {
         setQuery(searchParams.get("q") || "")
@@ -124,7 +133,9 @@ export default function Navbar() {
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
-            if (searchBarRef.current && !searchBarRef.current.contains(e.target as Node)) {
+            const inDesktop = searchBarRef.current?.contains(e.target as Node)
+            const inMobile = mobileSearchRef.current?.contains(e.target as Node)
+            if (!inDesktop && !inMobile) {
                 setShowCalendar(false)
                 setShowLocationSuggestions(false)
                 setShowCategoryDropdown(false)
@@ -150,7 +161,6 @@ export default function Navbar() {
 
                 for (const item of data) {
                     if (!item.address) continue
-                    // tylko miejscowości, nie ulice/budynki
                     if (item.class !== "place" && item.class !== "boundary") continue
 
                     const addr = item.address
@@ -193,6 +203,7 @@ export default function Navbar() {
         setShowCalendar(false)
         setShowFilterPanel(false)
         setShowCategoryDropdown(false)
+        setShowLocationSuggestions(false)
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -223,9 +234,233 @@ export default function Navbar() {
     const activeCatEntry = categories.find(c => c.label === selectedCategory)
     const CatIcon = activeCatEntry?.icon ?? LayoutGrid
 
-    const activeFiltersCount = [minPrice, maxPrice, ...Object.values(categoryFilters).filter(Boolean)].filter(Boolean).length
+    const activeFiltersCount = [minPrice, maxPrice, location, ...Object.values(categoryFilters).filter(Boolean)].filter(Boolean).length + (dateRange?.from ? 1 : 0)
 
     const currentCategoryFilters = categorySpecificFilters[selectedCategory] ?? []
+
+    /* ── shared dropdown JSX pieces ── */
+    const categoryDropdownJSX = (
+        <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-[48px] left-0 z-[100] w-[200px] bg-white rounded-[16px] shadow-2xl border border-black/[0.08] overflow-hidden"
+        >
+            {categories.map(({ label, icon: Icon }) => (
+                <button
+                    key={label}
+                    onMouseDown={() => {
+                        setSelectedCategory(label)
+                        setCategoryFilters({})
+                        setShowCategoryDropdown(false)
+                    }}
+                    className={`flex items-center gap-2.5 w-full px-4 py-2.5 text-left hover:bg-[#f5f5f7] transition-colors text-[13px] border-b border-black/[0.04] last:border-0 ${selectedCategory === label ? "text-[#1d1d1f] font-medium" : "text-[#6e6e73]"}`}
+                >
+                    <Icon size={14} className={selectedCategory === label ? "text-[#1d1d1f]" : "text-[#6e6e73]"} />
+                    {label}
+                    {selectedCategory === label && (
+                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#1d1d1f]" />
+                    )}
+                </button>
+            ))}
+        </motion.div>
+    )
+
+    const filterPanelJSX = (mobile = false) => (
+        <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.15 }}
+            className={`absolute top-[48px] z-[100] bg-white rounded-[20px] shadow-2xl border border-black/[0.08] overflow-hidden ${
+                mobile ? "left-0 right-0 w-full" : "left-1/2 -translate-x-1/2 w-[400px]"
+            }`}
+        >
+            <div className="p-5 max-h-[70vh] overflow-y-auto">
+                {/* Location — shown only in mobile filter panel */}
+                {mobile && (
+                    <div className="mb-5">
+                        <h3 className="text-[13px] font-semibold text-[#1d1d1f] mb-3">Lokalizacja</h3>
+                        <div className="relative">
+                            <div className="flex items-center border border-[#d2d2d7] rounded-[8px] px-3 py-2 gap-2">
+                                <MapPin size={13} className="text-[#6e6e73] flex-shrink-0" />
+                                <input
+                                    type="text"
+                                    value={location}
+                                    onChange={e => {
+                                        setLocation(e.target.value)
+                                        searchLocation(e.target.value)
+                                    }}
+                                    placeholder="Miasto lub region"
+                                    className="flex-1 text-[13px] text-[#1d1d1f] placeholder-[#6e6e73] outline-none bg-transparent"
+                                    autoComplete="off"
+                                />
+                                {location && (
+                                    <button onClick={() => { setLocation(""); setLocationSuggestions([]); setShowLocationSuggestions(false) }} className="text-[#6e6e73]">
+                                        <X size={13} />
+                                    </button>
+                                )}
+                            </div>
+                            {showLocationSuggestions && locationSuggestions.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 mt-1 z-[110] bg-white rounded-[12px] shadow-xl border border-black/[0.08] overflow-hidden">
+                                    {locationSuggestions.map((s, i) => (
+                                        <button
+                                            key={i}
+                                            type="button"
+                                            onMouseDown={() => {
+                                                setLocation(s.label)
+                                                setLocationSuggestions([])
+                                                setShowLocationSuggestions(false)
+                                            }}
+                                            className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-[#f5f5f7] transition-colors border-b border-black/[0.04] last:border-0"
+                                        >
+                                            <MapPin size={13} className="text-[#6e6e73] shrink-0" />
+                                            <div>
+                                                <p className="text-[13px] text-[#1d1d1f]">{s.label}</p>
+                                                {s.sub && <p className="text-[11px] text-[#6e6e73]">{s.sub}</p>}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Date range — shown only in mobile filter panel */}
+                {mobile && (
+                    <div className="mb-5 border-t border-black/[0.06] pt-4">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-[13px] font-semibold text-[#1d1d1f]">Termin wynajmu</h3>
+                            {dateLabel && (
+                                <button onClick={() => setDateRange(undefined)} className="text-[12px] text-[#6e6e73] hover:text-[#1d1d1f] underline">
+                                    Wyczyść
+                                </button>
+                            )}
+                        </div>
+                        {dateLabel && (
+                            <p className="text-[13px] text-[#1d1d1f] font-medium mb-3">{dateLabel}</p>
+                        )}
+                        <div className="overflow-x-auto -mx-2 px-2">
+                            <DayPicker
+                                mode="range"
+                                selected={dateRange}
+                                onSelect={setDateRange}
+                                numberOfMonths={1}
+                                fromDate={today}
+                                disabled={{ before: today }}
+                                locale={pl}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* Price range */}
+                <div className={mobile ? "border-t border-black/[0.06] pt-4 mb-5" : "mb-5"}>
+                    <h3 className="text-[13px] font-semibold text-[#1d1d1f] mb-3">Zakres cenowy (zł/dzień)</h3>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="number"
+                            min={0}
+                            value={minPrice}
+                            onChange={e => setMinPrice(e.target.value)}
+                            placeholder="Od"
+                            className="w-0 flex-1 min-w-0 border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
+                        />
+                        <span className="text-[#6e6e73] text-[11px] shrink-0">–</span>
+                        <input
+                            type="number"
+                            min={0}
+                            value={maxPrice}
+                            onChange={e => setMaxPrice(e.target.value)}
+                            placeholder="Do"
+                            className="w-0 flex-1 min-w-0 border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
+                        />
+                        {(minPrice || maxPrice) && (
+                            <button onClick={() => { setMinPrice(""); setMaxPrice("") }} className="text-[#6e6e73] hover:text-[#1d1d1f]">
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Category-specific filters */}
+                {currentCategoryFilters.length > 0 && (
+                    <div className="border-t border-black/[0.06] pt-4 space-y-4">
+                        <h3 className="text-[13px] font-semibold text-[#1d1d1f]">
+                            Filtry: {selectedCategory}
+                        </h3>
+                        {currentCategoryFilters.map(filter => (
+                            <div key={filter.key}>
+                                <p className="text-[11px] font-medium text-[#6e6e73] uppercase tracking-wide mb-2">
+                                    {filter.label}
+                                </p>
+                                {filter.type === "range" ? (
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            placeholder="Od"
+                                            value={categoryFilters[filter.keyMin!] || ""}
+                                            onChange={e => setCategoryFilters(prev => ({ ...prev, [filter.keyMin!]: e.target.value }))}
+                                            className="w-[90px] border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
+                                        />
+                                        <span className="text-[#6e6e73] text-[11px]">–</span>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            placeholder="Do"
+                                            value={categoryFilters[filter.keyMax!] || ""}
+                                            onChange={e => setCategoryFilters(prev => ({ ...prev, [filter.keyMax!]: e.target.value }))}
+                                            className="w-[90px] border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
+                                        />
+                                        <span className="text-[11px] text-[#6e6e73]">KM</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-wrap gap-2">
+                                        {filter.options?.map(option => (
+                                            <button
+                                                key={option}
+                                                onClick={() => toggleCategoryFilter(filter.key, option)}
+                                                className={`px-3 py-1.5 rounded-full text-[12px] border transition-all duration-150 ${
+                                                    categoryFilters[filter.key] === option
+                                                        ? "bg-[#1d1d1f] text-white border-[#1d1d1f]"
+                                                        : "bg-white text-[#1d1d1f] border-[#d2d2d7] hover:border-[#1d1d1f]"
+                                                }`}
+                                            >
+                                                {option}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {currentCategoryFilters.length === 0 && !mobile && (
+                    <p className="text-[12px] text-[#6e6e73] border-t border-black/[0.06] pt-4">
+                        Wybierz kategorię, aby zobaczyć dodatkowe filtry.
+                    </p>
+                )}
+
+                {/* Actions */}
+                <div className="flex items-center justify-between mt-5 pt-4 border-t border-black/[0.06]">
+                    <button
+                        onClick={() => { setMinPrice(""); setMaxPrice(""); setCategoryFilters({}); if (mobile) { setLocation(""); setDateRange(undefined) } }}
+                        className="text-[12px] text-[#6e6e73] hover:text-[#1d1d1f] underline"
+                    >
+                        Wyczyść filtry
+                    </button>
+                    <button
+                        onClick={handleSearch}
+                        className="bg-[#1d1d1f] text-white text-[12px] font-semibold px-4 py-1.5 rounded-full hover:bg-black transition-colors"
+                    >
+                        Zastosuj
+                    </button>
+                </div>
+            </div>
+        </motion.div>
+    )
 
     return (
         <>
@@ -235,333 +470,263 @@ export default function Navbar() {
                 transition={{ type: "spring", stiffness: 120, damping: 22 }}
                 className="fixed w-full z-50 top-0 bg-white/95 backdrop-blur-xl border-b border-black/[0.06] shadow-sm"
             >
-                <div className="max-w-[1400px] mx-auto px-6 h-[56px] flex flex-row items-center justify-between gap-4">
+                <div className="max-w-[1400px] mx-auto px-4 md:px-6">
 
-                    {/* Logo */}
-                    <Link href="/" className="flex-shrink-0" onClick={() => setQuery("")}>
-                        <div className="text-[17px] font-semibold tracking-tight text-[#1d1d1f] select-none">
-                            Lend<span className="text-[#6e6e73] font-light">igo</span>
-                        </div>
-                    </Link>
+                    {/* ── Top row ── */}
+                    <div className="h-[56px] flex flex-row items-center justify-between gap-4 relative">
 
-                    {/* Search Bar */}
-                    <div className="hidden md:flex flex-1 absolute left-1/2 -translate-x-1/2 w-[620px] justify-center z-10" ref={searchBarRef}>
-                        <div className="w-full flex flex-row items-center border border-[#d2d2d7] rounded-full bg-white shadow-sm hover:shadow-md transition-shadow duration-200 overflow-visible h-[40px]">
+                        {/* Logo */}
+                        <Link href="/" className="flex-shrink-0" onClick={() => setQuery("")}>
+                            <div className="text-[17px] font-semibold tracking-tight text-[#1d1d1f] select-none">
+                                Lend<span className="text-[#6e6e73] font-light">igo</span>
+                            </div>
+                        </Link>
 
-                            {/* Category selector */}
-                            <button
-                                onClick={() => {
-                                    setShowCategoryDropdown(v => !v)
-                                    setShowCalendar(false)
-                                    setShowFilterPanel(false)
-                                    setShowLocationSuggestions(false)
-                                }}
-                                className="flex items-center gap-1.5 px-3 h-full border-r border-[#d2d2d7] hover:bg-[#f5f5f7] rounded-l-full transition-colors flex-shrink-0 group"
-                            >
-                                <CatIcon size={12} className="text-[#6e6e73] group-hover:text-[#1d1d1f] transition-colors flex-shrink-0" />
-                                <span className="text-xs text-[#1d1d1f] font-medium max-w-[80px] truncate">
-                                    {selectedCategory === "Wszystkie" ? "Kategoria" : selectedCategory}
-                                </span>
-                                <ChevronDown size={10} className="text-[#6e6e73] flex-shrink-0" />
-                            </button>
+                        {/* Desktop Search Bar */}
+                        <div className="hidden md:flex flex-1 absolute left-1/2 -translate-x-1/2 w-[620px] justify-center z-10" ref={searchBarRef}>
+                            <div className="w-full flex flex-row items-center border border-[#d2d2d7] rounded-full bg-white shadow-sm hover:shadow-md transition-shadow duration-200 overflow-visible h-[40px]">
 
-                            {/* Query input */}
-                            <input
-                                type="text"
-                                value={query}
-                                onChange={e => setQuery(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder="Szukaj rzeczy..."
-                                className="flex-1 min-w-0 text-xs text-[#1d1d1f] placeholder-[#6e6e73] px-4 outline-none bg-transparent"
-                            />
+                                {/* Category selector */}
+                                <button
+                                    onClick={() => {
+                                        setShowCategoryDropdown(v => !v)
+                                        setShowCalendar(false)
+                                        setShowFilterPanel(false)
+                                        setShowLocationSuggestions(false)
+                                    }}
+                                    className="flex items-center gap-1.5 px-3 h-full border-r border-[#d2d2d7] hover:bg-[#f5f5f7] rounded-l-full transition-colors flex-shrink-0 group"
+                                >
+                                    <CatIcon size={12} className="text-[#6e6e73] group-hover:text-[#1d1d1f] transition-colors flex-shrink-0" />
+                                    <span className="text-xs text-[#1d1d1f] font-medium max-w-[80px] truncate">
+                                        {selectedCategory === "Wszystkie" ? "Kategoria" : selectedCategory}
+                                    </span>
+                                    <ChevronDown size={10} className="text-[#6e6e73] flex-shrink-0" />
+                                </button>
 
-                            {/* Location input */}
-                            <div className="flex items-center border-l border-[#d2d2d7] px-3 gap-1.5 h-full relative cursor-text flex-shrink-0">
-                                <MapPin size={11} className="text-[#6e6e73] flex-shrink-0" />
+                                {/* Query input */}
                                 <input
                                     type="text"
-                                    value={location}
-                                    onChange={e => {
-                                        setLocation(e.target.value)
-                                        setShowCalendar(false)
-                                        searchLocation(e.target.value)
-                                    }}
+                                    value={query}
+                                    onChange={e => setQuery(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    onFocus={() => locationSuggestions.length > 0 && setShowLocationSuggestions(true)}
-                                    placeholder="Lokalizacja"
-                                    className="w-[80px] text-xs text-[#1d1d1f] placeholder-[#6e6e73] outline-none bg-transparent"
-                                    autoComplete="off"
+                                    placeholder="Szukaj rzeczy..."
+                                    className="flex-1 min-w-0 text-xs text-[#1d1d1f] placeholder-[#6e6e73] px-4 outline-none bg-transparent"
                                 />
-                            </div>
 
-                            {/* Date picker trigger */}
-                            <div
-                                className="flex items-center border-l border-[#d2d2d7] px-3 gap-1.5 h-full cursor-pointer group flex-shrink-0"
-                                onClick={() => {
-                                    setShowCalendar(v => !v)
-                                    setShowLocationSuggestions(false)
-                                    setShowCategoryDropdown(false)
-                                    setShowFilterPanel(false)
-                                }}
-                            >
-                                <CalendarDays size={11} className="text-[#6e6e73] flex-shrink-0" />
-                                <span className={`text-xs whitespace-nowrap ${dateLabel ? "text-[#1d1d1f] font-medium" : "text-[#6e6e73]"}`}>
-                                    {dateLabel ?? "Termin"}
-                                </span>
-                                {dateLabel && (
-                                    <button onClick={clearDates} className="ml-1 text-[#6e6e73] hover:text-[#1d1d1f]">
-                                        <X size={10} />
-                                    </button>
-                                )}
-                            </div>
+                                {/* Location input */}
+                                <div className="flex items-center border-l border-[#d2d2d7] px-3 gap-1.5 h-full relative cursor-text flex-shrink-0">
+                                    <MapPin size={11} className="text-[#6e6e73] flex-shrink-0" />
+                                    <input
+                                        type="text"
+                                        value={location}
+                                        onChange={e => {
+                                            setLocation(e.target.value)
+                                            setShowCalendar(false)
+                                            searchLocation(e.target.value)
+                                        }}
+                                        onKeyDown={handleKeyDown}
+                                        onFocus={() => locationSuggestions.length > 0 && setShowLocationSuggestions(true)}
+                                        placeholder="Lokalizacja"
+                                        className="w-[80px] text-xs text-[#1d1d1f] placeholder-[#6e6e73] outline-none bg-transparent"
+                                        autoComplete="off"
+                                    />
+                                </div>
 
-                            {/* Filter button */}
-                            <button
-                                onClick={() => {
-                                    setShowFilterPanel(v => !v)
-                                    setShowCalendar(false)
-                                    setShowCategoryDropdown(false)
-                                    setShowLocationSuggestions(false)
-                                }}
-                                className={`flex items-center gap-1.5 border-l border-[#d2d2d7] px-3 h-full transition-colors flex-shrink-0 relative ${showFilterPanel ? "bg-[#f5f5f7]" : "hover:bg-[#f5f5f7]"}`}
-                            >
-                                <SlidersHorizontal size={11} className="text-[#6e6e73] flex-shrink-0" />
-                                <span className="text-xs text-[#6e6e73]">Filtry</span>
-                                {activeFiltersCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#1d1d1f] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                                        {activeFiltersCount}
+                                {/* Date picker trigger */}
+                                <div
+                                    className="flex items-center border-l border-[#d2d2d7] px-3 gap-1.5 h-full cursor-pointer group flex-shrink-0"
+                                    onClick={() => {
+                                        setShowCalendar(v => !v)
+                                        setShowLocationSuggestions(false)
+                                        setShowCategoryDropdown(false)
+                                        setShowFilterPanel(false)
+                                    }}
+                                >
+                                    <CalendarDays size={11} className="text-[#6e6e73] flex-shrink-0" />
+                                    <span className={`text-xs whitespace-nowrap ${dateLabel ? "text-[#1d1d1f] font-medium" : "text-[#6e6e73]"}`}>
+                                        {dateLabel ?? "Termin"}
                                     </span>
-                                )}
-                            </button>
+                                    {dateLabel && (
+                                        <button onClick={clearDates} className="ml-1 text-[#6e6e73] hover:text-[#1d1d1f]">
+                                            <X size={10} />
+                                        </button>
+                                    )}
+                                </div>
 
-                            {/* Search button */}
-                            <button
-                                onClick={handleSearch}
-                                className="bg-[#1d1d1f] rounded-full p-[7px] mr-1.5 ml-1.5 flex-shrink-0 hover:bg-[#3a3a3c] transition-colors"
-                            >
-                                <Search size={10} strokeWidth={3} className="text-white" />
-                            </button>
+                                {/* Filter button */}
+                                <button
+                                    onClick={() => {
+                                        setShowFilterPanel(v => !v)
+                                        setShowCalendar(false)
+                                        setShowCategoryDropdown(false)
+                                        setShowLocationSuggestions(false)
+                                    }}
+                                    className={`flex items-center gap-1.5 border-l border-[#d2d2d7] px-3 h-full transition-colors flex-shrink-0 relative ${showFilterPanel ? "bg-[#f5f5f7]" : "hover:bg-[#f5f5f7]"}`}
+                                >
+                                    <SlidersHorizontal size={11} className="text-[#6e6e73] flex-shrink-0" />
+                                    <span className="text-xs text-[#6e6e73]">Filtry</span>
+                                    {activeFiltersCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#1d1d1f] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                            {activeFiltersCount}
+                                        </span>
+                                    )}
+                                </button>
+
+                                {/* Search button */}
+                                <button
+                                    onClick={handleSearch}
+                                    className="bg-[#1d1d1f] rounded-full p-[7px] mr-1.5 ml-1.5 flex-shrink-0 hover:bg-[#3a3a3c] transition-colors"
+                                >
+                                    <Search size={10} strokeWidth={3} className="text-white" />
+                                </button>
+                            </div>
+
+                            {/* Desktop dropdowns */}
+                            {showCategoryDropdown && categoryDropdownJSX}
+                            {showFilterPanel && filterPanelJSX(false)}
+
+                            {/* Desktop Calendar */}
+                            {showCalendar && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute top-[48px] left-1/2 -translate-x-1/2 z-[100] bg-white rounded-[20px] shadow-2xl border border-black/[0.08] p-3"
+                                >
+                                    <DayPicker
+                                        mode="range"
+                                        selected={dateRange}
+                                        onSelect={setDateRange}
+                                        numberOfMonths={2}
+                                        fromDate={today}
+                                        disabled={{ before: today }}
+                                        locale={pl}
+                                    />
+                                    <div className="flex items-center justify-between px-2 pt-2 border-t border-black/[0.06]">
+                                        <button onClick={() => setDateRange(undefined)} className="text-[12px] text-[#6e6e73] hover:text-[#1d1d1f] underline">
+                                            Wyczyść
+                                        </button>
+                                        <button onClick={handleSearch} className="bg-[#1d1d1f] text-white text-[12px] font-semibold px-4 py-1.5 rounded-full hover:bg-black transition-colors">
+                                            Zastosuj
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* Desktop Location suggestions */}
+                            {showLocationSuggestions && locationSuggestions.length > 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute top-[48px] left-1/3 z-[100] w-[260px] bg-white rounded-[16px] shadow-2xl border border-black/[0.08] overflow-hidden"
+                                >
+                                    {locationSuggestions.map((s, i) => (
+                                        <button
+                                            key={i}
+                                            type="button"
+                                            onMouseDown={() => {
+                                                setLocation(s.label)
+                                                setLocationSuggestions([])
+                                                setShowLocationSuggestions(false)
+                                            }}
+                                            className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-[#f5f5f7] transition-colors border-b border-black/[0.04] last:border-0"
+                                        >
+                                            <MapPin size={13} className="text-[#6e6e73] shrink-0" />
+                                            <div>
+                                                <p className="text-[13px] text-[#1d1d1f]">{s.label}</p>
+                                                {s.sub && <p className="text-[11px] text-[#6e6e73]">{s.sub}</p>}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
                         </div>
 
-                        {/* Category dropdown */}
-                        {showCategoryDropdown && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 6, scale: 0.97 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                transition={{ duration: 0.15 }}
-                                className="absolute top-[48px] left-0 z-[100] w-[200px] bg-white rounded-[16px] shadow-2xl border border-black/[0.08] overflow-hidden"
+                        {/* Right side */}
+                        <div className="flex items-center gap-3 flex-shrink-0 relative z-20 ml-auto">
+                            <Link
+                                href="/listings/create"
+                                className="hidden md:block text-[13px] font-medium text-[#1d1d1f] hover:text-[#6e6e73] transition-colors px-3 py-1.5 rounded-full hover:bg-black/5"
                             >
-                                {categories.map(({ label, icon: Icon }) => (
-                                    <button
-                                        key={label}
-                                        onMouseDown={() => {
-                                            setSelectedCategory(label)
-                                            setCategoryFilters({})
-                                            setShowCategoryDropdown(false)
-                                        }}
-                                        className={`flex items-center gap-2.5 w-full px-4 py-2.5 text-left hover:bg-[#f5f5f7] transition-colors text-[13px] border-b border-black/[0.04] last:border-0 ${selectedCategory === label ? "text-[#1d1d1f] font-medium" : "text-[#6e6e73]"}`}
-                                    >
-                                        <Icon size={14} className={selectedCategory === label ? "text-[#1d1d1f]" : "text-[#6e6e73]"} />
-                                        {label}
-                                        {selectedCategory === label && (
-                                            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#1d1d1f]" />
-                                        )}
-                                    </button>
-                                ))}
-                            </motion.div>
-                        )}
+                                Dodaj ogłoszenie
+                            </Link>
+                            <UserMenu />
+                        </div>
+                    </div>
 
-                        {/* Filter panel */}
-                        {showFilterPanel && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 6, scale: 0.97 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                transition={{ duration: 0.15 }}
-                                className="absolute top-[48px] left-1/2 -translate-x-1/2 z-[100] w-[400px] bg-white rounded-[20px] shadow-2xl border border-black/[0.08] overflow-hidden"
-                            >
-                            <div className="p-5">
-                                {/* Price range */}
-                                <div className="mb-5">
-                                    <h3 className="text-[13px] font-semibold text-[#1d1d1f] mb-3">Zakres cenowy (zł/dzień)</h3>
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="number"
-                                            min={0}
-                                            value={minPrice}
-                                            onChange={e => setMinPrice(e.target.value)}
-                                            placeholder="Od"
-                                            className="w-0 flex-1 min-w-0 border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
-                                        />
-                                        <span className="text-[#6e6e73] text-[11px] shrink-0">–</span>
-                                        <input
-                                            type="number"
-                                            min={0}
-                                            value={maxPrice}
-                                            onChange={e => setMaxPrice(e.target.value)}
-                                            placeholder="Do"
-                                            className="w-0 flex-1 min-w-0 border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
-                                        />
-                                        {(minPrice || maxPrice) && (
-                                            <button onClick={() => { setMinPrice(""); setMaxPrice("") }} className="text-[#6e6e73] hover:text-[#1d1d1f]">
-                                                <X size={14} />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
+                    {/* ── Mobile Search Row ── */}
+                    <div className="flex md:hidden pb-3" ref={mobileSearchRef}>
+                        <div className="relative w-full">
+                            <div className="w-full flex items-center border border-[#d2d2d7] rounded-full bg-white shadow-sm h-[42px] overflow-visible">
 
-                                {/* Category-specific filters */}
-                                {currentCategoryFilters.length > 0 && (
-                                    <div className="border-t border-black/[0.06] pt-4 space-y-4">
-                                        <h3 className="text-[13px] font-semibold text-[#1d1d1f]">
-                                            Filtry: {selectedCategory}
-                                        </h3>
-                                        {currentCategoryFilters.map(filter => (
-                                            <div key={filter.key}>
-                                                <p className="text-[11px] font-medium text-[#6e6e73] uppercase tracking-wide mb-2">
-                                                    {filter.label}
-                                                </p>
-                                                {filter.type === "range" ? (
-                                                    <div className="flex items-center gap-3">
-                                                        <input
-                                                            type="number"
-                                                            min={0}
-                                                            placeholder="Od"
-                                                            value={categoryFilters[filter.keyMin!] || ""}
-                                                            onChange={e => setCategoryFilters(prev => ({ ...prev, [filter.keyMin!]: e.target.value }))}
-                                                            className="w-[90px] border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
-                                                        />
-                                                        <span className="text-[#6e6e73] text-[11px]">–</span>
-                                                        <input
-                                                            type="number"
-                                                            min={0}
-                                                            placeholder="Do"
-                                                            value={categoryFilters[filter.keyMax!] || ""}
-                                                            onChange={e => setCategoryFilters(prev => ({ ...prev, [filter.keyMax!]: e.target.value }))}
-                                                            className="w-[90px] border border-[#d2d2d7] rounded-[8px] px-2 py-1 text-[11px] text-[#1d1d1f] outline-none focus:border-[#1d1d1f] transition-colors"
-                                                        />
-                                                        <span className="text-[11px] text-[#6e6e73]">KM</span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {filter.options?.map(option => (
-                                                            <button
-                                                                key={option}
-                                                                onClick={() => toggleCategoryFilter(filter.key, option)}
-                                                                className={`px-3 py-1.5 rounded-full text-[12px] border transition-all duration-150 ${
-                                                                    categoryFilters[filter.key] === option
-                                                                        ? "bg-[#1d1d1f] text-white border-[#1d1d1f]"
-                                                                        : "bg-white text-[#1d1d1f] border-[#d2d2d7] hover:border-[#1d1d1f]"
-                                                                }`}
-                                                            >
-                                                                {option}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                {/* Category */}
+                                <button
+                                    onClick={() => {
+                                        setShowCategoryDropdown(v => !v)
+                                        setShowCalendar(false)
+                                        setShowFilterPanel(false)
+                                        setShowLocationSuggestions(false)
+                                    }}
+                                    className="flex items-center gap-1 px-3 h-full border-r border-[#d2d2d7] hover:bg-[#f5f5f7] rounded-l-full transition-colors flex-shrink-0"
+                                >
+                                    <CatIcon size={14} className="text-[#6e6e73]" />
+                                    <ChevronDown size={11} className="text-[#6e6e73]" />
+                                </button>
 
-                                {currentCategoryFilters.length === 0 && (
-                                    <p className="text-[12px] text-[#6e6e73] border-t border-black/[0.06] pt-4">
-                                        Wybierz kategorię, aby zobaczyć dodatkowe filtry.
-                                    </p>
-                                )}
-
-                                {/* Actions */}
-                                <div className="flex items-center justify-between mt-5 pt-4 border-t border-black/[0.06]">
-                                    <button
-                                        onClick={() => { setMinPrice(""); setMaxPrice(""); setCategoryFilters({}) }}
-                                        className="text-[12px] text-[#6e6e73] hover:text-[#1d1d1f] underline"
-                                    >
-                                        Wyczyść filtry
-                                    </button>
-                                    <button
-                                        onClick={handleSearch}
-                                        className="bg-[#1d1d1f] text-white text-[12px] font-semibold px-4 py-1.5 rounded-full hover:bg-black transition-colors"
-                                    >
-                                        Zastosuj
-                                    </button>
-                                </div>
-                            </div>
-                            </motion.div>
-                        )}
-
-                        {/* Calendar */}
-                        {showCalendar && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 6, scale: 0.97 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                transition={{ duration: 0.15 }}
-                                className="absolute top-[48px] left-1/2 -translate-x-1/2 z-[100] bg-white rounded-[20px] shadow-2xl border border-black/[0.08] p-3"
-                            >
-                                <DayPicker
-                                    mode="range"
-                                    selected={dateRange}
-                                    onSelect={setDateRange}
-                                    numberOfMonths={2}
-                                    fromDate={today}
-                                    disabled={{ before: today }}
-                                    locale={pl}
+                                {/* Query input */}
+                                <input
+                                    type="search"
+                                    value={query}
+                                    onChange={e => setQuery(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder="Szukaj rzeczy..."
+                                    className="flex-1 min-w-0 text-[13px] text-[#1d1d1f] placeholder-[#6e6e73] px-3 outline-none bg-transparent"
+                                    autoComplete="off"
                                 />
-                                <div className="flex items-center justify-between px-2 pt-2 border-t border-black/[0.06]">
-                                    <button onClick={() => setDateRange(undefined)} className="text-[12px] text-[#6e6e73] hover:text-[#1d1d1f] underline">
-                                        Wyczyść
-                                    </button>
-                                    <button onClick={handleSearch} className="bg-[#1d1d1f] text-white text-[12px] font-semibold px-4 py-1.5 rounded-full hover:bg-black transition-colors">
-                                        Zastosuj
-                                    </button>
-                                </div>
-                            </motion.div>
-                        )}
 
-                        {/* Location suggestions */}
-                        {showLocationSuggestions && locationSuggestions.length > 0 && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 6, scale: 0.97 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                transition={{ duration: 0.15 }}
-                                className="absolute top-[48px] left-1/3 z-[100] w-[260px] bg-white rounded-[16px] shadow-2xl border border-black/[0.08] overflow-hidden"
-                            >
-                                {locationSuggestions.map((s, i) => (
-                                    <button
-                                        key={i}
-                                        type="button"
-                                        onMouseDown={() => {
-                                            setLocation(s.label)
-                                            setLocationSuggestions([])
-                                            setShowLocationSuggestions(false)
-                                        }}
-                                        className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-[#f5f5f7] transition-colors border-b border-black/[0.04] last:border-0"
-                                    >
-                                        <MapPin size={13} className="text-[#6e6e73] shrink-0" />
-                                        <div>
-                                            <p className="text-[13px] text-[#1d1d1f]">{s.label}</p>
-                                            {s.sub && <p className="text-[11px] text-[#6e6e73]">{s.sub}</p>}
-                                        </div>
-                                    </button>
-                                ))}
-                            </motion.div>
-                        )}
+                                {/* Filter button (includes location + date on mobile) */}
+                                <button
+                                    onClick={() => {
+                                        setShowFilterPanel(v => !v)
+                                        setShowCalendar(false)
+                                        setShowCategoryDropdown(false)
+                                        setShowLocationSuggestions(false)
+                                    }}
+                                    className={`flex items-center gap-1 border-l border-[#d2d2d7] px-3 h-full flex-shrink-0 relative transition-colors ${showFilterPanel ? "bg-[#f5f5f7]" : "hover:bg-[#f5f5f7]"}`}
+                                >
+                                    <SlidersHorizontal size={14} className="text-[#6e6e73]" />
+                                    <span className="text-[12px] text-[#6e6e73]">Filtry</span>
+                                    {activeFiltersCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#1d1d1f] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                            {activeFiltersCount}
+                                        </span>
+                                    )}
+                                </button>
+
+                                {/* Search button */}
+                                <button
+                                    onClick={handleSearch}
+                                    className="bg-[#1d1d1f] rounded-full p-[8px] mr-1.5 ml-1.5 flex-shrink-0 hover:bg-[#3a3a3c] transition-colors"
+                                >
+                                    <Search size={12} strokeWidth={3} className="text-white" />
+                                </button>
+                            </div>
+
+                            {/* Mobile Category Dropdown */}
+                            {showCategoryDropdown && categoryDropdownJSX}
+
+                            {/* Mobile Filter Panel (includes location + date) */}
+                            {showFilterPanel && filterPanelJSX(true)}
+                        </div>
                     </div>
 
-                    {/* Right side */}
-                    <div className="flex items-center gap-3 flex-shrink-0 relative z-20 ml-auto">
-                        <Link
-                            href="/listings/create"
-                            className="hidden md:block text-[13px] font-medium text-[#1d1d1f] hover:text-[#6e6e73] transition-colors px-3 py-1.5 rounded-full hover:bg-black/5"
-                        >
-                            Dodaj ogłoszenie
-                        </Link>
-                        <UserMenu />
-                    </div>
                 </div>
             </motion.div>
 
             {/* Category Bar */}
             {!hideCategoryBar && (
-                <div className="fixed w-full z-40 top-[56px] bg-white/95 backdrop-blur-xl border-b border-black/[0.06]">
+                <div className="fixed w-full z-40 top-[101px] md:top-[56px] bg-white/95 backdrop-blur-xl border-b border-black/[0.06]">
                     <CategoryBar />
                 </div>
             )}
