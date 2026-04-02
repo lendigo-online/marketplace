@@ -76,7 +76,7 @@ export default async function Home({ searchParams }: HomeProps) {
     return (
         <div className="min-h-screen bg-[#fbfbfd]">
             {/* ── Hero Section ── */}
-            <section className="relative overflow-hidden bg-white pt-10 pb-20 px-6">
+            <section className="relative overflow-hidden bg-white pt-10 pb-20 px-4 md:px-6">
                 {/* Paint splatters */}
                 <PaintSplat color="#ffde59" className="absolute -top-10 -left-16 w-[340px] h-[340px] opacity-60 rotate-[-20deg] pointer-events-none" />
                 <PaintSplat color="#00bf63" className="absolute -bottom-16 -left-8 w-[260px] h-[260px] opacity-50 rotate-[30deg] pointer-events-none" />
@@ -115,7 +115,7 @@ export default async function Home({ searchParams }: HomeProps) {
             </section>
 
             {/* ── Listings Grid ── */}
-            <section id="listings" className="max-w-[1400px] mx-auto px-6 py-12">
+            <section id="listings" className="max-w-[1400px] mx-auto px-4 md:px-6 py-12">
                 <div className="flex items-end justify-between mb-8">
                     <div>
                         <h2 className="text-[28px] font-bold tracking-tight text-[#1d1d1f]">
@@ -155,7 +155,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 ) : (() => {
                     const isSearch = !!(q || location || (category && category !== "Wszystkie") || minPrice || maxPrice || CATEGORY_FILTER_KEYS.some(k => searchParams[k]))
                     return (
-                        <div className={`grid gap-4 ${isSearch ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"}`}>
+                        <div className={`grid gap-4 ${isSearch ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"}`}>
                             {safeListings.map((listing) => (
                                 <ListingCard key={listing.id} data={listing} horizontal={isSearch} />
                             ))}

@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import { Suspense } from "react"
 import "./globals.css"
@@ -19,6 +19,11 @@ export const metadata: Metadata = {
     description: "Discover and rent unique items from people around you. Electronics, tools, sports gear, and more.",
 }
 
+export const viewport: Viewport = {
+    width: "device-width",
+    initialScale: 1,
+}
+
 export default function RootLayout({
     children,
 }: {
@@ -31,7 +36,7 @@ export default function RootLayout({
                     <Suspense fallback={null}>
                         <Navbar />
                     </Suspense>
-                    <main className="min-h-screen pt-[120px] pb-12">
+                    <main className="min-h-screen pt-[168px] md:pt-[120px] pb-12">
                         {children}
                     </main>
                     <Footer />
