@@ -23,3 +23,19 @@ export type SafeUser = Omit<
     updatedAt: string
     emailVerified: string | null
 }
+
+export type IncomingReservation = Omit<
+    Reservation,
+    "createdAt" | "startDate" | "endDate"
+> & {
+    createdAt: string
+    startDate: string
+    endDate: string
+    listing: SafeListing
+    user: {
+        id: string
+        name: string | null
+        email: string | null
+        image: string | null
+    }
+}

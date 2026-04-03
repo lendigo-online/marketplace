@@ -47,21 +47,30 @@ export default function LoginPage() {
         if (!validate()) return
         setIsLoading(true)
 
-        signIn("credentials", {
+        const callback = await signIn("credentials", {
             email,
             password,
             redirect: false,
-        }).then((callback) => {
-            setIsLoading(false)
-            if (callback?.ok) {
-                toast.success("Zalogowano pomyślnie")
-                router.push("/")
-                router.refresh()
-            }
-            if (callback?.error) {
+        })
+        setIsLoading(false)
+        if (callback?.ok) {
+            toast.success("Zalogowano pomyślnie")
+            router.push("/")
+            router.refresh()
+        }
+        if (callback?.error) {
+            try {
+                const res = await fetch(`/api/check-email?email=${encodeURIComponent(email)}`)
+                const { exists } = await res.json()
+                if (!exists) {
+                    router.push(`/register?email=${encodeURIComponent(email)}`)
+                } else {
+                    toast.error("Nieprawidłowy email lub hasło")
+                }
+            } catch {
                 toast.error("Nieprawidłowy email lub hasło")
             }
-        })
+        }
     }
 
     return (
@@ -105,9 +114,14 @@ export default function LoginPage() {
                         </div>
 
                         <div>
-                            <label className="text-[12px] font-semibold text-[#6e6e73] uppercase tracking-wide mb-1.5 block">
-                                Hasło
-                            </label>
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="text-[12px] font-semibold text-[#6e6e73] uppercase tracking-wide">
+                                    Hasło
+                                </label>
+                                <Link href="/forgot-password" className="text-[12px] text-[#0071e3] hover:underline">
+                                    Zapomniałem hasła
+                                </Link>
+                            </div>
                             <input
                                 id="password"
                                 type="password"

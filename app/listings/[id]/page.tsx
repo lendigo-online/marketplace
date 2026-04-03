@@ -123,6 +123,8 @@ export default async function ListingPage({ params }: { params: IParams }) {
                             listing={safeListing}
                             reservations={safeReservations}
                             currentUser={currentUser}
+                            ownerPhone={listing.owner.phone}
+                            ownerName={listing.owner.name}
                         />
                     </div>
                 </div>

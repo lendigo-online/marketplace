@@ -1,0 +1,20 @@
+import { chromium } from 'playwright'
+const browser = await chromium.launch({ headless: true })
+const page = await browser.newPage()
+await page.setViewportSize({ width: 1400, height: 900 })
+await page.goto('http://localhost:3000/login')
+await page.waitForLoadState('networkidle')
+await page.fill('input[type="email"]', 'test@example.com')
+await page.fill('input[type="password"]', 'password123')
+await page.click('button[type="submit"]')
+await page.waitForTimeout(3000)
+await page.goto('http://localhost:3000/dashboard')
+await page.waitForLoadState('networkidle')
+await page.waitForTimeout(1500)
+try { await page.click('button:has-text("Rozumiem")', { timeout: 1500 }) } catch {}
+await page.waitForTimeout(500)
+// Scroll do sekcji ogłoszeń
+await page.evaluate(() => window.scrollTo(0, 700))
+await page.waitForTimeout(300)
+await page.screenshot({ path: '/tmp/dash_listings_now.png', clip: { x: 0, y: 600, width: 1400, height: 700 } })
+await browser.close()

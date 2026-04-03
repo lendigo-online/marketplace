@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import toast from "react-hot-toast"
 import { motion, AnimatePresence } from "framer-motion"
@@ -25,56 +25,17 @@ function FieldError({ msg }: { msg: string }) {
     )
 }
 
-export default function RegisterPage() {
+export default function ForgotPasswordPage() {
     const router = useRouter()
-    const searchParams = useSearchParams()
-    const [step, setStep] = useState<"form" | "verify">("form")
+    const [step, setStep] = useState<1 | 2 | 3>(1)
     const [isLoading, setIsLoading] = useState(false)
-    const [name, setName] = useState("")
-    const [email, setEmail] = useState(searchParams.get("email") ?? "")
-    const [password, setPassword] = useState("")
-    const [accepted, setAccepted] = useState(false)
-    const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; accepted?: string; code?: string }>({})
+    const [email, setEmail] = useState("")
     const [code, setCode] = useState(["", "", "", "", "", ""])
+    const [password, setPassword] = useState("")
+    const [confirmPassword, setConfirmPassword] = useState("")
+    const [errors, setErrors] = useState<{ email?: string; code?: string; password?: string; confirmPassword?: string }>({})
     const [resendCooldown, setResendCooldown] = useState(0)
     const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-
-    const validate = () => {
-        const e: typeof errors = {}
-        if (!name.trim() || name.trim().length < 2) e.name = "Imię i nazwisko musi mieć co najmniej 2 znaki"
-        if (!email.trim()) e.email = "Adres email jest wymagany"
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Wpisz poprawny adres email"
-        if (!password) e.password = "Hasło jest wymagane"
-        else if (password.length < 8) e.password = "Hasło musi mieć co najmniej 8 znaków"
-        if (!accepted) e.accepted = "Musisz zaakceptować warunki korzystania"
-        setErrors(e)
-        return Object.keys(e).length === 0
-    }
-
-    const sendCode = async () => {
-        if (!validate()) return
-        setIsLoading(true)
-        try {
-            const res = await fetch("/api/send-verification", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email }),
-            })
-            const data = await res.json().catch(() => ({}))
-            if (!res.ok) {
-                if (res.status === 409) setErrors(p => ({ ...p, email: "Ten adres email jest już zajęty" }))
-                else toast.error(data.error || "Błąd wysyłania kodu")
-                return
-            }
-            setStep("verify")
-            toast.success(`Kod wysłany na ${email}`)
-            startCooldown()
-        } catch {
-            toast.error("Coś poszło nie tak")
-        } finally {
-            setIsLoading(false)
-        }
-    }
 
     const startCooldown = () => {
         setResendCooldown(60)
@@ -86,11 +47,42 @@ export default function RegisterPage() {
         }, 1000)
     }
 
+    // Step 1: send reset code
+    const sendCode = async (e: React.FormEvent) => {
+        e.preventDefault()
+        const newErrors: typeof errors = {}
+        if (!email.trim()) newErrors.email = "Adres email jest wymagany"
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = "Wpisz poprawny adres email"
+        if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
+
+        setIsLoading(true)
+        try {
+            const res = await fetch("/api/send-reset-code", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) {
+                if (res.status === 404) setErrors(p => ({ ...p, email: data.error || "Nie znaleziono konta" }))
+                else toast.error(data.error || "Błąd wysyłania kodu")
+                return
+            }
+            setStep(2)
+            toast.success(`Kod wysłany na ${email}`)
+            startCooldown()
+        } catch {
+            toast.error("Coś poszło nie tak")
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
     const resendCode = async () => {
         if (resendCooldown > 0) return
         setIsLoading(true)
         try {
-            const res = await fetch("/api/send-verification", {
+            const res = await fetch("/api/send-reset-code", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email }),
@@ -136,36 +128,62 @@ export default function RegisterPage() {
         inputRefs.current[Math.min(pasted.length, 5)]?.focus()
     }
 
-    const onSubmit = async (e: React.FormEvent) => {
+    // Step 2: verify code and proceed to step 3
+    const verifyCode = (e: React.FormEvent) => {
         e.preventDefault()
         const fullCode = code.join("")
         if (fullCode.length < 6) {
             setErrors(p => ({ ...p, code: "Wpisz 6-cyfrowy kod" }))
             return
         }
+        setStep(3)
+    }
+
+    // Step 3: set new password
+    const resetPassword = async (e: React.FormEvent) => {
+        e.preventDefault()
+        const newErrors: typeof errors = {}
+        if (!password) newErrors.password = "Hasło jest wymagane"
+        else if (password.length < 8) newErrors.password = "Hasło musi mieć co najmniej 8 znaków"
+        if (!confirmPassword) newErrors.confirmPassword = "Potwierdź nowe hasło"
+        else if (password !== confirmPassword) newErrors.confirmPassword = "Hasła nie są identyczne"
+        if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
+
         setIsLoading(true)
         try {
-            const res = await fetch("/api/register", {
+            const res = await fetch("/api/reset-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, email, password, code: fullCode }),
+                body: JSON.stringify({ email, code: code.join(""), password }),
             })
-            if (res.ok) {
-                toast.success("Konto zostało utworzone! Zaloguj się.")
-                router.push("/login")
-            } else {
-                const data = await res.json().catch(() => ({}))
-                if (data.error?.includes("kod") || data.error?.includes("Kod")) {
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) {
+                if (data.error?.toLowerCase().includes("kod")) {
                     setErrors(p => ({ ...p, code: data.error }))
+                    setStep(2)
                 } else {
-                    toast.error(data.error || "Coś poszło nie tak")
+                    toast.error(data.error || "Błąd zmiany hasła")
                 }
+                return
             }
+            toast.success("Hasło zostało zmienione! Zaloguj się.")
+            router.push("/login")
         } catch {
             toast.error("Coś poszło nie tak")
         } finally {
             setIsLoading(false)
         }
+    }
+
+    const stepTitles = {
+        1: "Resetuj hasło",
+        2: "Wpisz kod",
+        3: "Nowe hasło",
+    }
+    const stepDescriptions = {
+        1: "Podaj email przypisany do konta",
+        2: `Wpisz kod wysłany na ${email}`,
+        3: "Ustaw nowe hasło do konta",
     }
 
     return (
@@ -182,42 +200,38 @@ export default function RegisterPage() {
                         Lend<span className="text-[#6e6e73] font-light">igo</span>
                     </div>
                     <h1 className="text-[28px] font-bold tracking-tight text-[#1d1d1f]">
-                        {step === "form" ? "Utwórz konto" : "Weryfikacja email"}
+                        {stepTitles[step]}
                     </h1>
                     <p className="text-[14px] text-[#6e6e73] mt-1">
-                        {step === "form"
-                            ? "Dołącz do tysięcy użytkowników Lendigo"
-                            : `Wpisz kod wysłany na ${email}`}
+                        {stepDescriptions[step]}
                     </p>
+                </div>
+
+                {/* Step dots */}
+                <div className="flex items-center justify-center gap-2 mb-6">
+                    {([1, 2, 3] as const).map(s => (
+                        <div
+                            key={s}
+                            className={`h-1.5 rounded-full transition-all duration-300 ${
+                                s === step ? "w-6 bg-[#0071e3]" : s < step ? "w-4 bg-[#0071e3]/40" : "w-4 bg-[#d2d2d7]"
+                            }`}
+                        />
+                    ))}
                 </div>
 
                 <div className="bg-white rounded-[28px] shadow-apple-lg border border-black/[0.04] p-8">
                     <AnimatePresence mode="wait">
-                        {step === "form" ? (
+                        {step === 1 && (
                             <motion.form
-                                key="form"
+                                key="step1"
                                 initial={{ opacity: 0, x: -16 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -16 }}
                                 transition={{ duration: 0.2 }}
-                                onSubmit={e => { e.preventDefault(); sendCode() }}
+                                onSubmit={sendCode}
                                 noValidate
                                 className="flex flex-col gap-3"
                             >
-                                <div>
-                                    <label className="text-[12px] font-semibold text-[#6e6e73] uppercase tracking-wide mb-1.5 block">
-                                        Imię i nazwisko
-                                    </label>
-                                    <input
-                                        placeholder="Jan Kowalski"
-                                        disabled={isLoading}
-                                        value={name}
-                                        onChange={e => { setName(e.target.value); setErrors(p => ({ ...p, name: undefined })) }}
-                                        className={`apple-input ${errors.name ? "border-red-400" : ""}`}
-                                    />
-                                    <FieldError msg={errors.name || ""} />
-                                </div>
-
                                 <div>
                                     <label className="text-[12px] font-semibold text-[#6e6e73] uppercase tracking-wide mb-1.5 block">
                                         Adres email
@@ -228,46 +242,9 @@ export default function RegisterPage() {
                                         disabled={isLoading}
                                         value={email}
                                         onChange={e => { setEmail(e.target.value); setErrors(p => ({ ...p, email: undefined })) }}
-                                        className={`apple-input ${errors.email ? "border-red-400" : ""}`}
+                                        className={`apple-input ${errors.email ? "border-red-400 focus:border-red-400" : ""}`}
                                     />
                                     <FieldError msg={errors.email || ""} />
-                                </div>
-
-                                <div>
-                                    <label className="text-[12px] font-semibold text-[#6e6e73] uppercase tracking-wide mb-1.5 block">
-                                        Hasło
-                                    </label>
-                                    <input
-                                        type="password"
-                                        placeholder="Minimum 8 znaków"
-                                        disabled={isLoading}
-                                        value={password}
-                                        onChange={e => { setPassword(e.target.value); setErrors(p => ({ ...p, password: undefined })) }}
-                                        className={`apple-input ${errors.password ? "border-red-400" : ""}`}
-                                    />
-                                    <FieldError msg={errors.password || ""} />
-                                </div>
-
-                                <div className="mt-1">
-                                    <label className="flex items-start gap-3 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={accepted}
-                                            onChange={e => { setAccepted(e.target.checked); setErrors(p => ({ ...p, accepted: undefined })) }}
-                                            className="mt-0.5 w-4 h-4 accent-[#1d1d1f] flex-shrink-0 cursor-pointer"
-                                        />
-                                        <span className="text-[12px] text-[#6e6e73] leading-relaxed">
-                                            Akceptuję{" "}
-                                            <Link href="/warunki" target="_blank" className="text-[#0071e3] hover:underline font-medium">
-                                                Warunki korzystania
-                                            </Link>{" "}
-                                            oraz{" "}
-                                            <Link href="/polityka" target="_blank" className="text-[#0071e3] hover:underline font-medium">
-                                                Politykę prywatności
-                                            </Link>
-                                        </span>
-                                    </label>
-                                    <FieldError msg={errors.accepted || ""} />
                                 </div>
 
                                 <button
@@ -275,20 +252,21 @@ export default function RegisterPage() {
                                     type="submit"
                                     className="btn-apple-primary w-full mt-3 py-3.5 text-[15px] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {isLoading ? "Wysyłanie kodu..." : "Wyślij kod weryfikacyjny"}
+                                    {isLoading ? "Wysyłanie kodu..." : "Wyślij kod"}
                                 </button>
                             </motion.form>
-                        ) : (
+                        )}
+
+                        {step === 2 && (
                             <motion.form
-                                key="verify"
+                                key="step2"
                                 initial={{ opacity: 0, x: 16 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: 16 }}
+                                exit={{ opacity: 0, x: -16 }}
                                 transition={{ duration: 0.2 }}
-                                onSubmit={onSubmit}
+                                onSubmit={verifyCode}
                                 className="flex flex-col gap-4"
                             >
-                                {/* 6-digit code inputs */}
                                 <div>
                                     <div className="flex gap-2 justify-center" onPaste={handleCodePaste}>
                                         {code.map((digit, i) => (
@@ -315,16 +293,16 @@ export default function RegisterPage() {
                                     type="submit"
                                     className="btn-apple-primary w-full py-3.5 text-[15px] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {isLoading ? "Tworzenie konta..." : "Zweryfikuj i utwórz konto"}
+                                    Dalej
                                 </button>
 
                                 <div className="flex items-center justify-between text-[13px]">
                                     <button
                                         type="button"
-                                        onClick={() => setStep("form")}
+                                        onClick={() => setStep(1)}
                                         className="text-[#6e6e73] hover:text-[#1d1d1f] transition-colors"
                                     >
-                                        ← Zmień dane
+                                        ← Zmień email
                                     </button>
                                     <button
                                         type="button"
@@ -337,11 +315,70 @@ export default function RegisterPage() {
                                 </div>
                             </motion.form>
                         )}
+
+                        {step === 3 && (
+                            <motion.form
+                                key="step3"
+                                initial={{ opacity: 0, x: 16 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 16 }}
+                                transition={{ duration: 0.2 }}
+                                onSubmit={resetPassword}
+                                noValidate
+                                className="flex flex-col gap-3"
+                            >
+                                <div>
+                                    <label className="text-[12px] font-semibold text-[#6e6e73] uppercase tracking-wide mb-1.5 block">
+                                        Nowe hasło
+                                    </label>
+                                    <input
+                                        type="password"
+                                        placeholder="Minimum 8 znaków"
+                                        disabled={isLoading}
+                                        value={password}
+                                        onChange={e => { setPassword(e.target.value); setErrors(p => ({ ...p, password: undefined })) }}
+                                        className={`apple-input ${errors.password ? "border-red-400 focus:border-red-400" : ""}`}
+                                    />
+                                    <FieldError msg={errors.password || ""} />
+                                </div>
+
+                                <div>
+                                    <label className="text-[12px] font-semibold text-[#6e6e73] uppercase tracking-wide mb-1.5 block">
+                                        Potwierdź nowe hasło
+                                    </label>
+                                    <input
+                                        type="password"
+                                        placeholder="Powtórz hasło"
+                                        disabled={isLoading}
+                                        value={confirmPassword}
+                                        onChange={e => { setConfirmPassword(e.target.value); setErrors(p => ({ ...p, confirmPassword: undefined })) }}
+                                        className={`apple-input ${errors.confirmPassword ? "border-red-400 focus:border-red-400" : ""}`}
+                                    />
+                                    <FieldError msg={errors.confirmPassword || ""} />
+                                </div>
+
+                                <button
+                                    disabled={isLoading}
+                                    type="submit"
+                                    className="btn-apple-primary w-full mt-3 py-3.5 text-[15px] disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isLoading ? "Zapisywanie..." : "Zmień hasło"}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setStep(2)}
+                                    className="text-[13px] text-[#6e6e73] hover:text-[#1d1d1f] transition-colors text-left"
+                                >
+                                    ← Wróć do kodu
+                                </button>
+                            </motion.form>
+                        )}
                     </AnimatePresence>
                 </div>
 
                 <p className="text-center text-[13px] text-[#6e6e73] mt-5">
-                    Masz już konto?{" "}
+                    Pamiętasz hasło?{" "}
                     <Link href="/login" className="text-[#0071e3] font-semibold hover:underline">
                         Zaloguj się
                     </Link>

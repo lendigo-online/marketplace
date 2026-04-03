@@ -5,6 +5,8 @@ import Link from "next/link"
 import { ArrowRight, Tag } from "lucide-react"
 import Typewriter from "@/components/Typewriter"
 import PaintSplat from "@/components/PaintSplat"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
 
 export const revalidate = 0
 
@@ -15,6 +17,18 @@ interface HomeProps {
 }
 
 export default async function Home({ searchParams }: HomeProps) {
+    const session = await getServerSession(authOptions)
+    const isLoggedIn = !!session?.user?.email
+
+    let likedIds = new Set<string>()
+    if (isLoggedIn) {
+        const user = await prisma.user.findUnique({
+            where: { email: session!.user!.email! },
+            include: { favorites: { select: { listingId: true } } }
+        })
+        likedIds = new Set(user?.favorites.map(f => f.listingId) ?? [])
+    }
+
     const { category, q, location, from, to, minPrice, maxPrice } = searchParams
 
     const fromDate = from ? new Date(from) : undefined
@@ -157,7 +171,13 @@ export default async function Home({ searchParams }: HomeProps) {
                     return (
                         <div className={`grid gap-4 ${isSearch ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"}`}>
                             {safeListings.map((listing) => (
-                                <ListingCard key={listing.id} data={listing} horizontal={isSearch} />
+                                <ListingCard
+                                    key={listing.id}
+                                    data={listing}
+                                    horizontal={isSearch}
+                                    isLoggedIn={isLoggedIn}
+                                    initialLiked={likedIds.has(listing.id)}
+                                />
                             ))}
                         </div>
                     )
