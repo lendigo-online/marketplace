@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import toast from "react-hot-toast"
@@ -25,7 +25,7 @@ function FieldError({ msg }: { msg: string }) {
     )
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [step, setStep] = useState<"form" | "verify">("form")
@@ -348,5 +348,13 @@ export default function RegisterPage() {
                 </p>
             </motion.div>
         </div>
+    )
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense>
+            <RegisterForm />
+        </Suspense>
     )
 }
