@@ -3,10 +3,10 @@
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { DateRange } from "react-day-picker"
-import { differenceInDays, eachDayOfInterval } from "date-fns"
+import { differenceInDays, eachDayOfInterval, parse } from "date-fns"
 import toast from "react-hot-toast"
 import { motion } from "framer-motion"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Phone } from "lucide-react"
 
 import { formatPrice } from "@/lib/utils"
 import { SafeListing, SafeReservation, SafeUser } from "@/types"
@@ -16,12 +16,16 @@ interface ReservationSidebarProps {
     listing: SafeListing
     reservations: SafeReservation[]
     currentUser?: SafeUser | null
+    ownerPhone?: string | null
+    ownerName?: string | null
 }
 
 export default function ReservationSidebar({
     listing,
     reservations,
-    currentUser
+    currentUser,
+    ownerPhone,
+    ownerName,
 }: ReservationSidebarProps) {
     const router = useRouter()
     const [date, setDate] = useState<DateRange | undefined>()
@@ -38,8 +42,12 @@ export default function ReservationSidebar({
             })
             dates = [...dates, ...range]
         })
+        if (listing.blockedDates?.length) {
+            const blocked = listing.blockedDates.map(s => parse(s, "yyyy-MM-dd", new Date()))
+            dates = [...dates, ...blocked]
+        }
         return dates
-    }, [reservations])
+    }, [reservations, listing.blockedDates])
 
     const isDateInvalid = useMemo(() => {
         if (!date?.from || !date?.to) return false
@@ -173,6 +181,23 @@ export default function ReservationSidebar({
                 <p className="text-[12px] text-[#6e6e73] text-center mt-4">
                     Nie zostanie pobrana opłata przed potwierdzeniem
                 </p>
+
+                {/* Call owner */}
+                {ownerPhone && (
+                    <div className="mt-5 pt-5 border-t border-black/[0.06]">
+                        <p className="text-[11px] font-semibold text-[#6e6e73] uppercase tracking-wide mb-3">
+                            Kontakt z właścicielem
+                        </p>
+                        <a
+                            href={`tel:${ownerPhone.replace(/\s/g, "")}`}
+                            className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border-2 border-[#00bf63] text-[#00bf63] text-[14px] font-semibold hover:bg-[#00bf63] hover:text-white transition-all duration-200"
+                        >
+                            <Phone size={15} strokeWidth={2.5} />
+                            Zadzwoń{ownerName ? ` do ${ownerName}` : ""}
+                        </a>
+                        <p className="text-[11px] text-[#6e6e73] text-center mt-2">{ownerPhone}</p>
+                    </div>
+                )}
             </div>
         </div>
     )

@@ -1,0 +1,18 @@
+import { chromium } from 'playwright'
+const browser = await chromium.launch({ headless: true })
+const page = await browser.newPage()
+await page.setViewportSize({ width: 1400, height: 900 })
+await page.goto('http://localhost:3000/login')
+await page.waitForLoadState('networkidle')
+await page.fill('input[type="email"]', 'test@example.com')
+await page.fill('input[type="password"]', 'password123')
+await page.click('button[type="submit"]')
+await page.waitForTimeout(3000)
+await page.goto('http://localhost:3000/dashboard')
+await page.waitForLoadState('networkidle')
+await page.waitForTimeout(1500)
+try { await page.click('button:has-text("Rozumiem")', { timeout: 1500 }) } catch {}
+await page.click('details:first-of-type summary')
+await page.waitForTimeout(800)
+await page.screenshot({ path: '/tmp/dash_cal3.png', clip: { x: 0, y: 550, width: 1400, height: 450 } })
+await browser.close()

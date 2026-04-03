@@ -17,6 +17,10 @@ const inter = Inter({
 export const metadata: Metadata = {
     title: "Lendigo — Rent Anything, Anywhere",
     description: "Discover and rent unique items from people around you. Electronics, tools, sports gear, and more.",
+    icons: {
+        icon: "/favicon.svg",
+        shortcut: "/favicon.svg",
+    },
 }
 
 export const viewport: Viewport = {

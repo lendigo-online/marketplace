@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Heart } from "lucide-react"
 import { useState } from "react"
 
@@ -12,11 +12,61 @@ import { formatPrice } from "@/lib/utils"
 interface ListingCardProps {
     data: SafeListing
     horizontal?: boolean
+    isLoggedIn?: boolean
+    initialLiked?: boolean
 }
 
-export default function ListingCard({ data, horizontal }: ListingCardProps) {
+export default function ListingCard({ data, horizontal, isLoggedIn, initialLiked }: ListingCardProps) {
     const router = useRouter()
-    const [liked, setLiked] = useState(false)
+    const [liked, setLiked] = useState(initialLiked ?? false)
+    const [loading, setLoading] = useState(false)
+
+    const handleLike = async (e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (!isLoggedIn) {
+            router.push("/login")
+            return
+        }
+        if (loading) return
+        setLoading(true)
+        const prev = liked
+        setLiked(l => !l) // optimistic
+        try {
+            const res = await fetch("/api/favorites", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ listingId: data.id })
+            })
+            if (!res.ok) setLiked(prev) // rollback
+        } catch {
+            setLiked(prev)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const heartButton = (size: number, padding: string) => (
+        <button
+            onClick={handleLike}
+            className={`z-10 ${padding} rounded-full bg-white/90 backdrop-blur-sm shadow-sm hover:scale-110 transition-transform duration-200`}
+        >
+            <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                    key={liked ? "liked" : "unliked"}
+                    initial={{ scale: 0.6, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.6, opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                >
+                    <Heart
+                        size={size}
+                        strokeWidth={2}
+                        className={liked ? "fill-red-500 text-red-500" : "text-[#1d1d1f]"}
+                    />
+                </motion.div>
+            </AnimatePresence>
+        </button>
+    )
 
     if (horizontal) {
         return (
@@ -29,7 +79,6 @@ export default function ListingCard({ data, horizontal }: ListingCardProps) {
                 transition={{ duration: 0.25, ease: "easeOut" }}
             >
                 <div className="flex flex-row gap-4 w-full bg-white rounded-[18px] shadow-sm border border-[#f0f0f0] overflow-hidden hover:shadow-md transition-shadow duration-200">
-                    {/* Image */}
                     <div className="relative w-[140px] shrink-0 bg-[#f5f5f7]">
                         <Image
                             fill
@@ -37,19 +86,10 @@ export default function ListingCard({ data, horizontal }: ListingCardProps) {
                             src={data.images?.[0] || "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&q=80"}
                             alt={data.title}
                         />
-                        <button
-                            onClick={(e) => { e.stopPropagation(); setLiked(p => !p) }}
-                            className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm hover:scale-110 transition-transform duration-200"
-                        >
-                            <Heart
-                                size={12}
-                                strokeWidth={2}
-                                className={liked ? "fill-red-500 text-red-500" : "text-[#1d1d1f]"}
-                            />
-                        </button>
+                        <div className="absolute top-2 right-2">
+                            {heartButton(12, "p-1.5")}
+                        </div>
                     </div>
-
-                    {/* Info */}
                     <div className="flex flex-col justify-center gap-1 py-4 pr-4 min-w-0">
                         <span className="text-[10px] font-semibold text-[#6e6e73] bg-[#f5f5f7] rounded-full px-2 py-0.5 w-fit">
                             {data.category}
@@ -82,7 +122,6 @@ export default function ListingCard({ data, horizontal }: ListingCardProps) {
             transition={{ duration: 0.25, ease: "easeOut" }}
         >
             <div className="flex flex-col gap-3 w-full">
-                {/* Image Container */}
                 <div className="aspect-square w-full relative overflow-hidden rounded-[22px] bg-[#f5f5f7]">
                     <Image
                         fill
@@ -90,30 +129,16 @@ export default function ListingCard({ data, horizontal }: ListingCardProps) {
                         src={data.images?.[0] || "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&q=80"}
                         alt={data.title}
                     />
-                    {/* Gradient overlay at bottom */}
                     <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent rounded-b-[22px]" />
-
-                    {/* Heart button */}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setLiked(p => !p) }}
-                        className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/90 backdrop-blur-sm shadow-apple-sm hover:scale-110 transition-transform duration-200"
-                    >
-                        <Heart
-                            size={14}
-                            strokeWidth={2}
-                            className={liked ? "fill-red-500 text-red-500" : "text-[#1d1d1f]"}
-                        />
-                    </button>
-
-                    {/* Category pill */}
+                    <div className="absolute top-3 right-3">
+                        {heartButton(14, "p-2")}
+                    </div>
                     <div className="absolute bottom-3 left-3">
                         <span className="text-[10px] font-semibold text-white bg-black/40 backdrop-blur-sm rounded-full px-2 py-0.5">
                             {data.category}
                         </span>
                     </div>
                 </div>
-
-                {/* Text info */}
                 <div className="px-0.5">
                     <div className="font-semibold text-[14px] leading-tight text-[#1d1d1f] truncate tracking-tight">
                         {data.title}
