@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import toast from "react-hot-toast"
 import { motion, AnimatePresence } from "framer-motion"
+import { Eye, EyeOff } from "lucide-react"
 
 function FieldError({ msg }: { msg: string }) {
     return (
@@ -32,6 +33,7 @@ export default function LoginPage() {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
+    const [showPassword, setShowPassword] = useState(false)
 
     const validate = () => {
         const e: { email?: string; password?: string } = {}
@@ -122,15 +124,25 @@ export default function LoginPage() {
                                     Zapomniałem hasła
                                 </Link>
                             </div>
-                            <input
-                                id="password"
-                                type="password"
-                                placeholder="••••••••"
-                                disabled={isLoading}
-                                value={password}
-                                onChange={(e) => { setPassword(e.target.value); setErrors(p => ({ ...p, password: undefined })) }}
-                                className={`apple-input ${errors.password ? "border-red-400 focus:border-red-400" : ""}`}
-                            />
+                            <div className="relative">
+                                <input
+                                    id="password"
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="••••••••"
+                                    disabled={isLoading}
+                                    value={password}
+                                    onChange={(e) => { setPassword(e.target.value); setErrors(p => ({ ...p, password: undefined })) }}
+                                    className={`apple-input pr-10 ${errors.password ? "border-red-400 focus:border-red-400" : ""}`}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(v => !v)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6e6e73] hover:text-[#1d1d1f] transition-colors"
+                                    tabIndex={-1}
+                                >
+                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                            </div>
                             <FieldError msg={errors.password || ""} />
                         </div>
 
