@@ -25,7 +25,8 @@ export async function POST(
             pricePerDay,
             location,
             images,
-            category
+            category,
+            discountRules
         } = body
 
         if (!title || !description || !pricePerDay || !location || !category) {
@@ -40,6 +41,7 @@ export async function POST(
                 location,
                 images: images || [],
                 category,
+                discountRules: Array.isArray(discountRules) ? discountRules : [],
                 ownerId: currentUser.id
             }
         })

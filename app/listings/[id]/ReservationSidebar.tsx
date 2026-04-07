@@ -9,7 +9,7 @@ import { motion } from "framer-motion"
 import { AlertCircle, Phone } from "lucide-react"
 
 import { formatPrice } from "@/lib/utils"
-import { SafeListing, SafeReservation, SafeUser } from "@/types"
+import { SafeListing, SafeReservation, SafeUser, DiscountRule } from "@/types"
 import { DatePickerWithRange } from "@/components/ui/date-picker"
 
 interface ReservationSidebarProps {
@@ -62,9 +62,20 @@ export default function ReservationSidebar({
         return Math.max(1, differenceInDays(date.to, date.from))
     }, [date])
 
+    const activeDiscount = useMemo(() => {
+        const rules = (listing.discountRules ?? []) as DiscountRule[]
+        if (!rules.length || !dayCount) return null
+        const applicable = rules
+            .filter(r => dayCount >= Number(r.minDays))
+            .sort((a, b) => Number(b.minDays) - Number(a.minDays))
+        return applicable[0] ?? null
+    }, [dayCount, listing.discountRules])
+
     const totalPrice = useMemo(() => {
-        return dayCount * listing.pricePerDay
-    }, [dayCount, listing.pricePerDay])
+        const base = dayCount * listing.pricePerDay
+        if (!activeDiscount) return base
+        return base * (1 - activeDiscount.discountPercent / 100)
+    }, [dayCount, listing.pricePerDay, activeDiscount])
 
     const onReserve = async () => {
         if (!currentUser) return router.push("/login")
@@ -168,8 +179,18 @@ export default function ReservationSidebar({
                     >
                         <div className="flex items-center justify-between text-[14px] text-[#6e6e73]">
                             <span>{formatPrice(listing.pricePerDay)} × {dayCount} {dayCount === 1 ? "dzień" : "dni"}</span>
-                            <span>{formatPrice(totalPrice)}</span>
+                            <span>{formatPrice(dayCount * listing.pricePerDay)}</span>
                         </div>
+                        {activeDiscount && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -4 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex items-center justify-between text-[13px] text-[#00bf63] font-medium"
+                            >
+                                <span>Rabat {activeDiscount.discountPercent}% (≥{activeDiscount.minDays} dni)</span>
+                                <span>−{formatPrice(dayCount * listing.pricePerDay * activeDiscount.discountPercent / 100)}</span>
+                            </motion.div>
+                        )}
                         <div className="flex items-center justify-between text-[15px] font-semibold text-[#1d1d1f] pt-2 border-t border-black/[0.06]">
                             <span>Razem</span>
                             <span>{formatPrice(totalPrice)}</span>

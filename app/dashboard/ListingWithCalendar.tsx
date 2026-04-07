@@ -3,10 +3,11 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { CalendarX, MapPin, ExternalLink, ChevronDown } from "lucide-react"
+import { CalendarX, MapPin, ExternalLink, ChevronDown, Zap, Percent } from "lucide-react"
 import { formatPrice } from "@/lib/utils"
-import { SafeListing } from "@/types"
+import { SafeListing, DiscountRule } from "@/types"
 import BlockedDatesEditor from "./BlockedDatesEditor"
+import DiscountRulesEditor from "./DiscountRulesEditor"
 import { motion, AnimatePresence } from "framer-motion"
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
 
 export default function ListingWithCalendar({ listing, index = 0 }: Props) {
     const [open, setOpen] = useState(false)
+    const [openDiscounts, setOpenDiscounts] = useState(false)
 
     return (
         <motion.div
@@ -23,7 +25,7 @@ export default function ListingWithCalendar({ listing, index = 0 }: Props) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.06, ease: "easeOut" }}
             layout
-            className={`bg-white rounded-[22px] border border-black/[0.04] shadow-apple-sm overflow-hidden ${open ? "lg:col-span-2" : ""}`}
+            className={`bg-white rounded-[22px] border border-black/[0.04] shadow-apple-sm overflow-hidden ${(open || openDiscounts) ? "lg:col-span-2" : ""}`}
         >
             <div className="flex flex-col sm:flex-row">
                 {/* Zdjęcie */}
@@ -69,29 +71,93 @@ export default function ListingWithCalendar({ listing, index = 0 }: Props) {
                             <span className="text-[13px] text-[#6e6e73]">/ dzień</span>
                         </div>
 
-                        <motion.button
-                            onClick={() => setOpen(v => !v)}
-                            whileTap={{ scale: 0.95 }}
-                            whileHover={{ scale: 1.03 }}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-semibold border transition-colors duration-200 ${
-                                open
-                                    ? "bg-[#1d1d1f] text-white border-[#1d1d1f]"
-                                    : "bg-white text-[#1d1d1f] border-[#d2d2d7] hover:border-[#1d1d1f]"
-                            }`}
-                        >
-                            <CalendarX size={14} />
-                            Terminarz
-                            <motion.span
-                                animate={{ rotate: open ? 180 : 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="flex"
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
+                            <motion.button
+                                onClick={() => { setOpenDiscounts(v => !v); setOpen(false) }}
+                                whileTap={{ scale: 0.95 }}
+                                whileHover={{ scale: 1.03 }}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-semibold border transition-colors duration-200 ${
+                                    openDiscounts
+                                        ? "bg-[#0071e3] text-white border-[#0071e3]"
+                                        : "bg-white text-[#1d1d1f] border-[#d2d2d7] hover:border-[#0071e3] hover:text-[#0071e3]"
+                                }`}
                             >
-                                <ChevronDown size={13} />
-                            </motion.span>
-                        </motion.button>
+                                <Percent size={13} />
+                                Rabaty
+                                <motion.span
+                                    animate={{ rotate: openDiscounts ? 180 : 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="flex"
+                                >
+                                    <ChevronDown size={13} />
+                                </motion.span>
+                            </motion.button>
+
+                            <div className="relative group/promo">
+                                <button
+                                    disabled
+                                    className="flex items-center gap-1.5 px-3 py-2 rounded-full text-[13px] font-semibold border border-dashed border-[#ffde59] bg-[#fffbea] text-[#a07800] opacity-60 cursor-not-allowed"
+                                >
+                                    <Zap size={13} className="fill-[#ffde59] text-[#a07800]" />
+                                    Promuj
+                                </button>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#1d1d1f] text-white text-[11px] rounded-lg whitespace-nowrap opacity-0 group-hover/promo:opacity-100 transition-opacity pointer-events-none">
+                                    Wkrótce dostępne
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1d1d1f]" />
+                                </div>
+                            </div>
+
+                            <motion.button
+                                onClick={() => { setOpen(v => !v); setOpenDiscounts(false) }}
+                                whileTap={{ scale: 0.95 }}
+                                whileHover={{ scale: 1.03 }}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-semibold border transition-colors duration-200 ${
+                                    open
+                                        ? "bg-[#1d1d1f] text-white border-[#1d1d1f]"
+                                        : "bg-white text-[#1d1d1f] border-[#d2d2d7] hover:border-[#1d1d1f]"
+                                }`}
+                            >
+                                <CalendarX size={14} />
+                                Terminarz
+                                <motion.span
+                                    animate={{ rotate: open ? 180 : 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="flex"
+                                >
+                                    <ChevronDown size={13} />
+                                </motion.span>
+                            </motion.button>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Rabaty — animowane rozwinięcie */}
+            <AnimatePresence>
+                {openDiscounts && (
+                    <motion.div
+                        key="discounts"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                    >
+                        <motion.div
+                            initial={{ y: -8 }}
+                            animate={{ y: 0 }}
+                            exit={{ y: -8 }}
+                            transition={{ duration: 0.25, ease: "easeOut" }}
+                            className="border-t border-black/[0.06] px-5 pb-5"
+                        >
+                            <DiscountRulesEditor
+                                listingId={listing.id}
+                                initialRules={(listing.discountRules ?? []) as DiscountRule[]}
+                            />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Terminarz — animowane rozwinięcie */}
             <AnimatePresence>

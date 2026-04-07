@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle2, Tag, MapPin, DollarSign, Image as ImageIcon, AlignLeft, SlidersHorizontal } from "lucide-react"
+import { CheckCircle2, Tag, MapPin, DollarSign, Image as ImageIcon, AlignLeft, SlidersHorizontal, Percent, Plus, Trash2 } from "lucide-react"
 import LocationSearch from "@/components/LocationSearch"
 
 const categories = [
@@ -59,6 +59,7 @@ export default function CreateListingPage() {
     const [categoryFilters, setCategoryFilters] = useState<Record<string, string>>({})
     const [imageFiles, setImageFiles] = useState<File[]>([])
     const [imagePreviews, setImagePreviews] = useState<string[]>([])
+    const [discountRules, setDiscountRules] = useState<{ minDays: string; discountPercent: string }[]>([])
 
     const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -108,6 +109,10 @@ export default function CreateListingPage() {
                 images.push(url)
             }
 
+            const validRules = discountRules
+                .filter(r => r.minDays && r.discountPercent)
+                .map(r => ({ minDays: parseInt(r.minDays), discountPercent: parseFloat(r.discountPercent) }))
+
             const response = await fetch("/api/listings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -115,7 +120,8 @@ export default function CreateListingPage() {
                     ...formData,
                     description: buildDescription(),
                     images,
-                    pricePerDay: parseFloat(formData.pricePerDay)
+                    pricePerDay: parseFloat(formData.pricePerDay),
+                    discountRules: validRules
                 })
             })
 
@@ -350,6 +356,69 @@ export default function CreateListingPage() {
                                 ))}
                             </div>
                         )}
+                    </div>
+
+                    {/* Rabaty za długi wynajem */}
+                    <div className="bg-white rounded-[24px] p-6 shadow-apple-sm border border-black/[0.04]">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Percent size={14} className="text-[#6e6e73]" />
+                            <span className="text-[12px] font-semibold text-[#6e6e73] uppercase tracking-wide">
+                                Rabaty za długi wynajem
+                            </span>
+                        </div>
+                        <p className="text-[11px] text-[#6e6e73] mb-4">
+                            Ustaw zniżki dla klientów wypożyczających na więcej dni
+                        </p>
+
+                        <div className="space-y-3">
+                            {discountRules.map((rule, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: -6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="flex items-center gap-2"
+                                >
+                                    <div className="flex items-center gap-2 flex-1 bg-[#f5f5f7] rounded-2xl px-4 py-2.5">
+                                        <span className="text-[12px] text-[#6e6e73] whitespace-nowrap">Powyżej</span>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            placeholder="7"
+                                            value={rule.minDays}
+                                            onChange={e => setDiscountRules(prev => prev.map((r, j) => j === i ? { ...r, minDays: e.target.value } : r))}
+                                            className="w-14 bg-white border border-[#d2d2d7] rounded-lg px-2 py-1 text-[13px] text-center outline-none focus:border-[#1d1d1f] transition-colors"
+                                        />
+                                        <span className="text-[12px] text-[#6e6e73] whitespace-nowrap">dni →</span>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={99}
+                                            placeholder="10"
+                                            value={rule.discountPercent}
+                                            onChange={e => setDiscountRules(prev => prev.map((r, j) => j === i ? { ...r, discountPercent: e.target.value } : r))}
+                                            className="w-14 bg-white border border-[#d2d2d7] rounded-lg px-2 py-1 text-[13px] text-center outline-none focus:border-[#1d1d1f] transition-colors"
+                                        />
+                                        <span className="text-[12px] text-[#6e6e73]">% taniej</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDiscountRules(prev => prev.filter((_, j) => j !== i))}
+                                        className="p-2 rounded-xl text-[#6e6e73] hover:text-red-500 hover:bg-red-50 transition-colors"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </motion.div>
+                            ))}
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setDiscountRules(prev => [...prev, { minDays: "", discountPercent: "" }])}
+                            className="mt-3 flex items-center gap-1.5 text-[13px] font-medium text-[#0071e3] hover:underline"
+                        >
+                            <Plus size={14} />
+                            Dodaj regułę rabatu
+                        </button>
                     </div>
 
                     {/* Submit */}
