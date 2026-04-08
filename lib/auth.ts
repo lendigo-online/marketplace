@@ -33,7 +33,7 @@ export const authOptions: NextAuthOptions = {
                     throw new Error("Invalid credentials")
                 }
 
-                return user
+                return { ...user, role: user.role }
             }
         })
     ],
@@ -50,6 +50,7 @@ export const authOptions: NextAuthOptions = {
                 token.id = user.id
                 token.email = user.email
                 token.name = user.name
+                token.role = (user as any).role
             }
             return token
         },
@@ -58,6 +59,7 @@ export const authOptions: NextAuthOptions = {
                 session.user.email = token.email as string
                 session.user.name = token.name as string
                 ;(session.user as any).id = token.id as string
+                ;(session.user as any).role = token.role as string
             }
             return session
         }

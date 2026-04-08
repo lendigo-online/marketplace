@@ -45,6 +45,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
     const listings = await prisma.listing.findMany({
         where: {
+            status: "APPROVED",
             ...(category && category !== "Wszystkie" ? { category } : {}),
             ...(q ? { title: { contains: q } } : {}),
             ...(location ? { location: { contains: location } } : {}),

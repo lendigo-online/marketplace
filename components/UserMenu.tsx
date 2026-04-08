@@ -2,7 +2,7 @@
 
 import { signOut, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Menu } from "lucide-react"
+import { Menu, Shield } from "lucide-react"
 import { useCallback, useRef, useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
@@ -65,6 +65,15 @@ export default function UserMenu() {
                                 </div>
                                 <div className="h-px bg-black/[0.06] mx-3" />
                                 <div className="py-1">
+                                    {(session.user as any)?.role === "ADMIN" && (
+                                        <button
+                                            onClick={() => handleAction("/admin")}
+                                            className="w-full text-left px-4 py-2.5 text-[13px] text-[#0071e3] font-semibold hover:bg-[#f0f7ff] transition-colors flex items-center gap-2"
+                                        >
+                                            <Shield size={13} />
+                                            Panel admina
+                                        </button>
+                                    )}
                                     <button
                                         onClick={() => handleAction("/dashboard")}
                                         className="w-full text-left px-4 py-2.5 text-[13px] text-[#1d1d1f] font-medium hover:bg-[#f5f5f7] transition-colors"
