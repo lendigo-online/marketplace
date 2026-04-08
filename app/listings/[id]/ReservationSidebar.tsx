@@ -97,7 +97,7 @@ export default function ReservationSidebar({
             })
 
             if (response.ok) {
-                toast.success("Rezerwacja potwierdzona!")
+                toast.success("Rezerwacja złożona! Czeka na potwierdzenie właściciela.")
                 setDate(undefined)
                 router.refresh()
             } else {
