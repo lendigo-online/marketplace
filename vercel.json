@@ -1,0 +1,10 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "lendigo.online" }],
+      "destination": "https://www.lendigo.online/:path*",
+      "permanent": true
+    }
+  ]
+}

@@ -1,3 +1,13 @@
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+    title: "Warunki korzystania",
+    description: "Zapoznaj się z warunkami korzystania z platformy Lendigo — zasadami wystawiania ogłoszeń, płatności, odpowiedzialności i ochrony użytkowników.",
+    alternates: {
+        canonical: "https://www.lendigo.online/warunki",
+    },
+}
+
 export default function WarunkiPage() {
     return (
         <div className="min-h-screen bg-[#fbfbfd] py-16 px-6">
@@ -10,7 +20,7 @@ export default function WarunkiPage() {
                     <section>
                         <h2 className="text-[20px] font-semibold mb-3">1. Postanowienia ogólne</h2>
                         <p className="text-[#6e6e73]">
-                            Serwis Lendigo (dostępny pod adresem lendigo.pl) jest platformą internetową umożliwiającą użytkownikom
+                            Serwis Lendigo (dostępny pod adresem lendigo.online) jest platformą internetową umożliwiającą użytkownikom
                             wystawianie ogłoszeń dotyczących wypożyczenia przedmiotów oraz zawieranie umów wypożyczenia między użytkownikami.
                             Operatorem serwisu jest Lendigo. Korzystanie z serwisu oznacza akceptację niniejszych warunków.
                         </p>

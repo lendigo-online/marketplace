@@ -15,8 +15,41 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-    title: "Lendigo — Rent Anything, Anywhere",
-    description: "Discover and rent unique items from people around you. Electronics, tools, sports gear, and more.",
+    title: {
+        default: "Lendigo — Wypożycz cokolwiek w Polsce",
+        template: "%s | Lendigo",
+    },
+    description: "Wypożycz elektronikę, narzędzia, rowery, samochody i setki innych rzeczy od osób w Twoim mieście. Bezpiecznie, prosto, bez zobowiązań.",
+    metadataBase: new URL("https://www.lendigo.online"),
+    alternates: {
+        canonical: "/",
+        languages: {
+            pl: "https://www.lendigo.online/",
+            "x-default": "https://www.lendigo.online/",
+        },
+    },
+    openGraph: {
+        type: "website",
+        locale: "pl_PL",
+        url: "https://www.lendigo.online/",
+        siteName: "Lendigo",
+        title: "Lendigo — Wypożycz cokolwiek w Polsce",
+        description: "Wypożycz elektronikę, narzędzia, rowery, samochody i setki innych rzeczy od osób w Twoim mieście.",
+        images: [
+            {
+                url: "/og-image.png",
+                width: 1200,
+                height: 630,
+                alt: "Lendigo — platforma wypożyczania",
+            },
+        ],
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "Lendigo — Wypożycz cokolwiek w Polsce",
+        description: "Wypożycz elektronikę, narzędzia, rowery i setki innych rzeczy od osób w Twoim mieście.",
+        images: ["/og-image.png"],
+    },
     icons: {
         icon: "/favicon.svg",
         shortcut: "/favicon.svg",

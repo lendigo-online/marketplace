@@ -1,7 +1,8 @@
 "use client"
 
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
+import Link from "next/link"
 import {
     Laptop,
     Bike,
@@ -31,11 +32,10 @@ const categories = [
 ]
 
 export default function CategoryBar() {
-    const router = useRouter()
     const searchParams = useSearchParams()
     const active = searchParams.get("category") || "Wszystkie"
 
-    const handleClick = (label: string) => {
+    const buildHref = (label: string) => {
         const params = new URLSearchParams()
         const q = searchParams.get("q")
         const location = searchParams.get("location")
@@ -46,7 +46,7 @@ export default function CategoryBar() {
         if (from) params.set("from", from)
         if (to) params.set("to", to)
         if (label !== "Wszystkie") params.set("category", label)
-        router.push(`/?${params.toString()}`)
+        return `/?${params.toString()}`
     }
 
     return (
@@ -58,9 +58,9 @@ export default function CategoryBar() {
             <div className="max-w-[1400px] mx-auto px-6">
                 <div className="flex flex-row items-center gap-1 overflow-x-auto no-scrollbar py-2">
                     {categories.map(({ label, icon: Icon }) => (
-                        <button
+                        <Link
                             key={label}
-                            onClick={() => handleClick(label)}
+                            href={buildHref(label)}
                             className={`flex-shrink-0 flex flex-col items-center gap-1 px-4 py-2 rounded-full transition-all duration-200 group relative
                                 ${active === label
                                     ? "text-[#1d1d1f]"
@@ -79,7 +79,7 @@ export default function CategoryBar() {
                                     className="absolute -bottom-2 left-2 right-2 h-[2px] bg-[#1d1d1f] rounded-full"
                                 />
                             )}
-                        </button>
+                        </Link>
                     ))}
                 </div>
             </div>
