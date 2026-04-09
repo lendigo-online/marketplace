@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { writeFile } from "fs/promises"
-import path from "path"
+import { put } from "@vercel/blob"
 import crypto from "crypto"
 import sharp from "sharp"
 import { getServerSession } from "next-auth/next"
@@ -34,11 +33,13 @@ export async function POST(request: Request) {
             .toBuffer()
 
         const filename = `${crypto.randomUUID()}.jpg`
-        const publicDir = path.join(process.cwd(), "public", "uploads")
 
-        await writeFile(path.join(publicDir, filename), compressed)
+        const blob = await put(filename, compressed, {
+            access: "public",
+            contentType: "image/jpeg",
+        })
 
-        return NextResponse.json({ url: `/uploads/${filename}` })
+        return NextResponse.json({ url: blob.url })
     } catch (error) {
         console.error("Upload error:", error)
         return NextResponse.json({ error: "Upload failed." }, { status: 500 })
