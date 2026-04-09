@@ -43,18 +43,15 @@ export default function Typewriter() {
   }, [text, isDeleting, wordIndex]);
 
   return (
-    <h1 className="text-[40px] md:text-[56px] lg:text-[72px] font-bold leading-tight tracking-[-0.04em] text-[#1d1d1f] mb-6 min-h-[144px] md:min-h-[72px]">
-      Rób co chcesz <br className="md:hidden" />
+    <span
+      style={{ color: colors[wordIndex % colors.length] }}
+      className="inline-flex items-center text-left transition-colors duration-300"
+    >
+      {text}
       <span
-        style={{ color: colors[wordIndex % colors.length] }}
-        className="inline-flex items-center text-left transition-colors duration-300"
-      >
-        {text}
-        <span
-          style={{ backgroundColor: colors[wordIndex % colors.length] }}
-          className="inline-block w-[4px] h-[0.9em] ml-1 rounded-full animate-[pulse_1s_cubic-bezier(0.4,0,0.6,1)_infinite]"
-        />
-      </span>
-    </h1>
+        style={{ backgroundColor: colors[wordIndex % colors.length] }}
+        className="inline-block w-[4px] h-[0.9em] ml-1 rounded-full animate-[pulse_1s_cubic-bezier(0.4,0,0.6,1)_infinite]"
+      />
+    </span>
   );
 }

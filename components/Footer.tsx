@@ -32,7 +32,16 @@ export default function Footer() {
                             <a href="tel:+48538191200" className="hover:text-[#1d1d1f] transition-colors">+48 538 191 200</a>
                             <a href="mailto:lendigo00@gmail.com" className="hover:text-[#1d1d1f] transition-colors">lendigo00@gmail.com</a>
                         </div>
-                        <div className="flex items-center gap-6">
+                        <div className="flex flex-wrap items-center gap-6">
+                            <Link href="/jak-to-dziala" className="hover:text-[#1d1d1f] transition-colors">
+                                Jak to działa
+                            </Link>
+                            <Link href="/faq" className="hover:text-[#1d1d1f] transition-colors">
+                                FAQ
+                            </Link>
+                            <Link href="/o-nas" className="hover:text-[#1d1d1f] transition-colors">
+                                O nas
+                            </Link>
                             <Link href="/warunki" className="hover:text-[#1d1d1f] transition-colors">
                                 Warunki korzystania
                             </Link>

@@ -1,0 +1,49 @@
+# Lendigo
+
+> Lendigo is a peer-to-peer rental marketplace based in Poland where people can rent and lend everyday items directly from one another.
+
+## What is Lendigo?
+
+Lendigo (https://www.lendigo.online) is a Polish platform that connects people who want to rent items with those who have items to lend. Instead of buying something you need only occasionally, you can rent it from a neighbor or local community member for the exact days you need it.
+
+## How It Works
+
+1. Browse listings across 10 categories on the homepage or search by location and keyword
+2. Book the item for your desired dates and pay securely via Stripe
+3. Arrange pickup directly with the owner and return it when done
+
+## Categories
+
+Lendigo supports rentals in the following categories:
+- Elektronika (Electronics): laptops, cameras, drones, projectors
+- Narzędzia (Tools): drills, saws, ladders, power tools
+- Samochody (Cars): vehicles available for daily rental
+- Rowery (Bikes): city bikes, mountain bikes, e-bikes
+- Foto/Video: cameras, lenses, lighting equipment, gimbals
+- Camping: tents, sleeping bags, hiking gear
+- Muzyka (Music): instruments, amplifiers, recording equipment
+- Sporty wodne (Water Sports): kayaks, SUP boards, diving gear
+- Odzież (Clothing): costumes, formal wear, specialized sportswear
+- Gry (Games): board games, consoles, VR headsets
+
+## Coverage
+
+Lendigo currently serves users across Poland, with active listings in Warsaw (Warszawa), Kraków, Wrocław, Gdańsk, Poznań, and other Polish cities. All prices are quoted in Polish złoty (PLN) per day.
+
+## Payment & Safety
+
+- Payments processed securely via Stripe — Lendigo does not store card data
+- User accounts are email-verified before listing or renting
+- Rental agreements are made between users directly; Lendigo acts as the marketplace intermediary
+
+## Contact
+
+- Website: https://www.lendigo.online
+- Email: lendigo00@gmail.com
+- Phone: +48 538 191 200
+
+## Legal
+
+- Terms of Service: https://www.lendigo.online/warunki
+- Privacy Policy: https://www.lendigo.online/polityka
+- The platform complies with RODO (Polish implementation of GDPR)

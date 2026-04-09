@@ -14,9 +14,10 @@ interface ListingCardProps {
     horizontal?: boolean
     isLoggedIn?: boolean
     initialLiked?: boolean
+    priority?: boolean
 }
 
-export default function ListingCard({ data, horizontal, isLoggedIn, initialLiked }: ListingCardProps) {
+export default function ListingCard({ data, horizontal, isLoggedIn, initialLiked, priority }: ListingCardProps) {
     const router = useRouter()
     const [liked, setLiked] = useState(initialLiked ?? false)
     const [loading, setLoading] = useState(false)
@@ -85,6 +86,7 @@ export default function ListingCard({ data, horizontal, isLoggedIn, initialLiked
                             className="object-cover transition-transform duration-500 group-hover:scale-105"
                             src={data.images?.[0] || "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&q=80"}
                             alt={data.title}
+                            priority={priority}
                         />
                         <div className="absolute top-2 right-2">
                             {heartButton(12, "p-1.5")}
@@ -128,6 +130,7 @@ export default function ListingCard({ data, horizontal, isLoggedIn, initialLiked
                         className="object-cover h-full w-full transition-transform duration-500 group-hover:scale-105"
                         src={data.images?.[0] || "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&q=80"}
                         alt={data.title}
+                        priority={priority}
                     />
                     <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent rounded-b-[22px]" />
                     <div className="absolute top-3 right-3">

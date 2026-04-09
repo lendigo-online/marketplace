@@ -1,3 +1,13 @@
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+    title: "Polityka prywatności",
+    description: "Polityka prywatności Lendigo — informacje o przetwarzaniu danych osobowych, plikach cookies oraz prawach użytkowników zgodnie z RODO.",
+    alternates: {
+        canonical: "https://www.lendigo.online/polityka",
+    },
+}
+
 export default function PolitykaPrywatnosci() {
     return (
         <div className="min-h-screen bg-[#fbfbfd] py-16 px-6">

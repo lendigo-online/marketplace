@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import prisma from "@/lib/prisma"
 import ListingCard from "@/components/ListingCard"
 import { SafeListing } from "@/types"
@@ -10,7 +11,32 @@ import { authOptions } from "@/lib/auth"
 
 export const revalidate = 0
 
+export const metadata: Metadata = {
+    title: "Lendigo — Wypożycz cokolwiek w Polsce",
+    description: "Wypożycz elektronikę, narzędzia, rowery, samochody i setki innych rzeczy od osób w Twoim mieście. Bezpiecznie, prosto, bez zobowiązań.",
+    alternates: {
+        canonical: "https://www.lendigo.online/",
+        languages: {
+            pl: "https://www.lendigo.online/",
+            "x-default": "https://www.lendigo.online/",
+        },
+    },
+}
+
 const CATEGORY_FILTER_KEYS = ["paliwo", "skrzynia", "stan", "typ", "typ_roweru", "typ_narzedzi", "typ_foto", "typ_muzyka", "typ_fitness", "typ_camping", "plec", "rozmiar"]
+
+const CATEGORIES = [
+    { label: "Elektronika", href: "/?category=Elektronika" },
+    { label: "Narzędzia", href: "/?category=Narzędzia" },
+    { label: "Samochody", href: "/?category=Samochody" },
+    { label: "Rowery", href: "/?category=Rowery" },
+    { label: "Foto/Video", href: "/?category=Foto%2FVideo" },
+    { label: "Camping", href: "/?category=Camping" },
+    { label: "Muzyka", href: "/?category=Muzyka" },
+    { label: "Sporty wodne", href: "/?category=Sporty+wodne" },
+    { label: "Odzież", href: "/?category=Odzież" },
+    { label: "Gry", href: "/?category=Gry" },
+]
 
 interface HomeProps {
     searchParams: Record<string, string | undefined>
@@ -43,34 +69,36 @@ export default async function Home({ searchParams }: HomeProps) {
     const mocMin = searchParams["mocMin"] ? parseInt(searchParams["mocMin"]) : undefined
     const mocMax = searchParams["mocMax"] ? parseInt(searchParams["mocMax"]) : undefined
 
-    const listings = await prisma.listing.findMany({
-        where: {
-            status: "APPROVED",
-            ...(category && category !== "Wszystkie" ? { category } : {}),
-            ...(q ? { title: { contains: q } } : {}),
-            ...(location ? { location: { contains: location } } : {}),
-            ...(minPriceVal !== undefined || maxPriceVal !== undefined ? {
-                pricePerDay: {
-                    ...(minPriceVal !== undefined ? { gte: minPriceVal } : {}),
-                    ...(maxPriceVal !== undefined ? { lte: maxPriceVal } : {}),
-                }
-            } : {}),
-            // Exclude listings with conflicting reservations in the date range
-            ...(fromDate && toDate ? {
-                reservations: {
-                    none: {
-                        AND: [
-                            { startDate: { lte: toDate } },
-                            { endDate: { gte: fromDate } },
-                            { status: { not: "CANCELLED" } }
-                        ]
+    const [listings, totalCount] = await Promise.all([
+        prisma.listing.findMany({
+            where: {
+                status: "APPROVED",
+                ...(category && category !== "Wszystkie" ? { category } : {}),
+                ...(q ? { title: { contains: q } } : {}),
+                ...(location ? { location: { contains: location } } : {}),
+                ...(minPriceVal !== undefined || maxPriceVal !== undefined ? {
+                    pricePerDay: {
+                        ...(minPriceVal !== undefined ? { gte: minPriceVal } : {}),
+                        ...(maxPriceVal !== undefined ? { lte: maxPriceVal } : {}),
                     }
-                }
-            } : {}),
-            ...(categoryFilterConditions.length > 0 ? { AND: categoryFilterConditions } : {}),
-        },
-        orderBy: { createdAt: "desc" }
-    })
+                } : {}),
+                ...(fromDate && toDate ? {
+                    reservations: {
+                        none: {
+                            AND: [
+                                { startDate: { lte: toDate } },
+                                { endDate: { gte: fromDate } },
+                                { status: { not: "CANCELLED" } }
+                            ]
+                        }
+                    }
+                } : {}),
+                ...(categoryFilterConditions.length > 0 ? { AND: categoryFilterConditions } : {}),
+            },
+            orderBy: { createdAt: "desc" }
+        }),
+        prisma.listing.count({ where: { status: "APPROVED" } }),
+    ])
 
     const filteredListings = listings.filter(listing => {
         if (mocMin === undefined && mocMax === undefined) return true
@@ -88,8 +116,64 @@ export default async function Home({ searchParams }: HomeProps) {
         updatedAt: listing.updatedAt.toISOString(),
     }))
 
+    const websiteSchema = {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "Organization",
+                "@id": "https://www.lendigo.online/#organization",
+                "name": "Lendigo",
+                "url": "https://www.lendigo.online",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": "https://www.lendigo.online/favicon.svg"
+                },
+                "contactPoint": {
+                    "@type": "ContactPoint",
+                    "telephone": "+48-538-191-200",
+                    "email": "lendigo00@gmail.com",
+                    "contactType": "customer support",
+                    "areaServed": "PL",
+                    "availableLanguage": "Polish"
+                }
+            },
+            {
+                "@type": "WebSite",
+                "@id": "https://www.lendigo.online/#website",
+                "url": "https://www.lendigo.online",
+                "name": "Lendigo",
+                "description": "Wypożycz elektronikę, narzędzia, rowery, samochody i setki innych rzeczy od osób w Twoim mieście.",
+                "publisher": { "@id": "https://www.lendigo.online/#organization" },
+                "inLanguage": "pl",
+                "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": {
+                        "@type": "EntryPoint",
+                        "urlTemplate": "https://www.lendigo.online/?q={search_term_string}"
+                    },
+                    "query-input": "required name=search_term_string"
+                }
+            },
+            {
+                "@type": "ItemList",
+                "name": "Polecane ogłoszenia — Lendigo",
+                "url": "https://www.lendigo.online",
+                "itemListElement": safeListings.slice(0, 10).map((listing, i) => ({
+                    "@type": "ListItem",
+                    "position": i + 1,
+                    "url": `https://www.lendigo.online/listings/${listing.id}`
+                }))
+            }
+        ]
+    }
+
     return (
         <div className="min-h-screen bg-[#fbfbfd]">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+            />
+
             {/* ── Hero Section ── */}
             <section className="relative overflow-hidden bg-white pt-10 pb-20 px-4 md:px-6">
                 {/* Paint splatters */}
@@ -105,10 +189,13 @@ export default async function Home({ searchParams }: HomeProps) {
                         <span className="text-[12px] font-medium text-[#1d1d1f]">Wypożycz cokolwiek — płać tylko za czas</span>
                     </div>
 
-                    <Typewriter />
+                    <h1 className="text-[40px] md:text-[56px] lg:text-[72px] font-bold leading-tight tracking-[-0.04em] text-[#1d1d1f] mb-6 min-h-[144px] md:min-h-[72px]">
+                        Rób co chcesz <br className="md:hidden" />
+                        <Typewriter />
+                    </h1>
 
                     <p className="text-[19px] md:text-[21px] text-[#6e6e73] font-light leading-relaxed max-w-[600px] mx-auto mb-10">
-                        Odkryj setki przedmiotów wypożyczanych przez ludzi w Twojej okolicy. Bezpiecznie, prosto, bez zobowiązań.
+                        Odkryj {totalCount > 0 ? `${totalCount} ogłoszeń` : "ogłoszenia"} wypożyczanych przez ludzi w Twojej okolicy. Bezpiecznie, prosto, bez zobowiązań.
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -128,6 +215,23 @@ export default async function Home({ searchParams }: HomeProps) {
                     </div>
                 </div>
             </section>
+
+            {/* ── Category Links (server-rendered for SEO) ── */}
+            <nav aria-label="Kategorie" className="bg-white border-b border-black/[0.04] py-3 px-4 md:px-6">
+                <div className="max-w-[1400px] mx-auto">
+                    <div className="flex flex-wrap gap-2 justify-center">
+                        {CATEGORIES.map(({ label, href }) => (
+                            <Link
+                                key={label}
+                                href={href}
+                                className="text-[13px] text-[#6e6e73] hover:text-[#1d1d1f] px-3 py-1.5 rounded-full hover:bg-[#f5f5f7] transition-all duration-200"
+                            >
+                                {label}
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            </nav>
 
             {/* ── Listings Grid ── */}
             <section id="listings" className="max-w-[1400px] mx-auto px-4 md:px-6 py-12">
@@ -171,13 +275,14 @@ export default async function Home({ searchParams }: HomeProps) {
                     const isSearch = !!(q || location || (category && category !== "Wszystkie") || minPrice || maxPrice || CATEGORY_FILTER_KEYS.some(k => searchParams[k]))
                     return (
                         <div className={`grid gap-4 ${isSearch ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"}`}>
-                            {safeListings.map((listing) => (
+                            {safeListings.map((listing, index) => (
                                 <ListingCard
                                     key={listing.id}
                                     data={listing}
                                     horizontal={isSearch}
                                     isLoggedIn={isLoggedIn}
                                     initialLiked={likedIds.has(listing.id)}
+                                    priority={index === 0}
                                 />
                             ))}
                         </div>

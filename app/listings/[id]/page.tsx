@@ -1,6 +1,8 @@
+import type { Metadata } from "next"
 import prisma from "@/lib/prisma"
 import { notFound } from "next/navigation"
 import { MapPin, Tag, User } from "lucide-react"
+import Link from "next/link"
 import ImageGallery from "@/components/ImageGallery"
 
 import { formatPrice } from "@/lib/utils"
@@ -11,6 +13,32 @@ import { SafeListing, SafeReservation, SafeUser } from "@/types"
 
 interface IParams {
     id?: string
+}
+
+export async function generateMetadata({ params }: { params: IParams }): Promise<Metadata> {
+    const listing = await prisma.listing.findUnique({
+        where: { id: params.id },
+        select: { title: true, description: true, category: true, location: true, pricePerDay: true, images: true },
+    })
+
+    if (!listing) return { title: "Ogłoszenie nie znalezione" }
+
+    const title = `${listing.title} — wynajem ${listing.location}`
+    const description = `Wypożycz ${listing.title} w ${listing.location}. Cena: ${listing.pricePerDay} zł/dzień. Kategoria: ${listing.category}. Sprawdź szczegóły na Lendigo.`
+
+    return {
+        title,
+        description,
+        alternates: {
+            canonical: `https://www.lendigo.online/listings/${params.id}`,
+        },
+        openGraph: {
+            title,
+            description,
+            images: listing.images?.[0] ? [{ url: listing.images[0], alt: listing.title }] : [],
+            type: "website",
+        },
+    }
 }
 
 export default async function ListingPage({ params }: { params: IParams }) {
@@ -55,19 +83,82 @@ export default async function ListingPage({ params }: { params: IParams }) {
         listing: safeListing
     }))
 
+    const productSchema = {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": "Strona główna",
+                        "item": "https://www.lendigo.online"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 2,
+                        "name": listing.category,
+                        "item": `https://www.lendigo.online/?category=${encodeURIComponent(listing.category)}`
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 3,
+                        "name": listing.title,
+                        "item": `https://www.lendigo.online/listings/${listing.id}`
+                    }
+                ]
+            },
+            {
+                "@type": "Product",
+                "name": listing.title,
+                "description": listing.description,
+                "image": listing.images?.[0] || undefined,
+                "url": `https://www.lendigo.online/listings/${listing.id}`,
+                "category": listing.category,
+                "offers": {
+                    "@type": "Offer",
+                    "priceCurrency": "PLN",
+                    "price": listing.pricePerDay.toFixed(2),
+                    "priceSpecification": {
+                        "@type": "UnitPriceSpecification",
+                        "price": listing.pricePerDay.toFixed(2),
+                        "priceCurrency": "PLN",
+                        "unitText": "DAY"
+                    },
+                    "availability": "https://schema.org/InStock",
+                    "seller": {
+                        "@type": "Person",
+                        "name": listing.owner.name || "Użytkownik Lendigo"
+                    },
+                    "url": `https://www.lendigo.online/listings/${listing.id}`
+                }
+            }
+        ]
+    }
+
     return (
         <div className="min-h-screen bg-[#fbfbfd]">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+            />
+
             <ImageGallery images={listing.images} title={listing.title} />
 
             <div className="max-w-[1100px] mx-auto px-6 -mt-8 relative z-10">
                 {/* Breadcrumb */}
-                <div className="flex items-center gap-2 text-[12px] text-[#6e6e73] mb-4">
-                    <Tag size={11} />
-                    <span>{listing.category}</span>
+                <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[12px] text-[#6e6e73] mb-4">
+                    <Link href="/" className="hover:text-[#1d1d1f] transition-colors">Strona główna</Link>
+                    <span>·</span>
+                    <Link href={`/?category=${encodeURIComponent(listing.category)}`} className="hover:text-[#1d1d1f] transition-colors flex items-center gap-1">
+                        <Tag size={11} />
+                        {listing.category}
+                    </Link>
                     <span>·</span>
                     <MapPin size={11} />
                     <span>{listing.location}</span>
-                </div>
+                </nav>
 
                 {/* Title */}
                 <h1 className="text-[36px] md:text-[44px] font-bold tracking-tighter text-[#1d1d1f] leading-tight mb-2">
