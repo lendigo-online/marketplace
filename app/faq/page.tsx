@@ -70,7 +70,7 @@ const faqs = [
         items: [
             {
                 question: "Jak dodać ogłoszenie na Lendigo?",
-                answer: "Zaloguj się lub zarejestruj, a następnie kliknij „Dodaj ogłoszenie". Wypełnij formularz: tytuł, opis, kategoria, lokalizacja, cena za dzień i zdjęcia przedmiotu. Ogłoszenie trafia do moderacji i pojawia się na stronie po zatwierdzeniu.",
+                answer: "Zaloguj się lub zarejestruj, a następnie kliknij przycisk Dodaj ogłoszenie. Wypełnij formularz: tytuł, opis, kategoria, lokalizacja, cena za dzień i zdjęcia przedmiotu. Ogłoszenie trafia do moderacji i pojawia się na stronie po zatwierdzeniu.",
             },
             {
                 question: "Ile kosztuje wystawienie ogłoszenia?",
