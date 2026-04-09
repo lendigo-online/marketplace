@@ -32,7 +32,7 @@ export async function POST(request: Request) {
             .jpeg({ quality: 80 })
             .toBuffer()
 
-        const filename = `${crypto.randomUUID()}.jpg`
+        const filename = `listings/${crypto.randomUUID()}.jpg`
 
         const blob = await put(filename, compressed, {
             access: "public",
