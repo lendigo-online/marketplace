@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 import { motion, AnimatePresence } from "framer-motion"
@@ -60,6 +60,20 @@ export default function CreateListingPage() {
     const [imageFiles, setImageFiles] = useState<File[]>([])
     const [imagePreviews, setImagePreviews] = useState<string[]>([])
     const [discountRules, setDiscountRules] = useState<{ minDays: string; discountPercent: string }[]>([])
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
+    const addImages = (files: FileList | null) => {
+        if (!files) return
+        const newFiles = Array.from(files)
+        const total = [...imageFiles, ...newFiles].slice(0, 8)
+        setImageFiles(total)
+        setImagePreviews(total.map(f => URL.createObjectURL(f)))
+    }
+
+    const removeImage = (index: number) => {
+        setImageFiles(prev => prev.filter((_, i) => i !== index))
+        setImagePreviews(prev => prev.filter((_, i) => i !== index))
+    }
 
     const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -321,41 +335,54 @@ export default function CreateListingPage() {
                         <div className="flex items-center gap-2 mb-1">
                             <ImageIcon size={14} className="text-[#6e6e73]" />
                             <label className="text-[12px] font-semibold text-[#6e6e73] uppercase tracking-wide">
-                                Zdjęcie
+                                Zdjęcia
                             </label>
                         </div>
-                        <p className="text-[11px] text-[#6e6e73] mb-3">Możesz dodać do 8 zdjęć</p>
+                        <p className="text-[11px] text-[#6e6e73] mb-3">{imageFiles.length}/8 zdjęć</p>
                         <input
+                            ref={fileInputRef}
                             type="file"
                             accept="image/*"
                             multiple
                             disabled={isLoading}
-                            onChange={(e) => {
-                                const files = Array.from(e.target.files || []).slice(0, 8)
-                                setImageFiles(files)
-                                setImagePreviews(files.map(f => URL.createObjectURL(f)))
-                            }}
-                            className="block w-full text-sm text-[#6e6e73]
-                                file:mr-4 file:py-2 file:px-4
-                                file:rounded-full file:border-0
-                                file:text-sm file:font-semibold
-                                file:bg-[#1d1d1f] file:text-white
-                                hover:file:bg-black transition-colors cursor-pointer"
+                            onChange={e => { addImages(e.target.files); e.target.value = "" }}
+                            className="hidden"
                         />
-                        {imagePreviews.length > 0 && (
-                            <div className="mt-4 grid grid-cols-3 gap-2">
-                                {imagePreviews.map((src, i) => (
-                                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-black/[0.04]">
-                                        <img src={src} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
-                                        {i === 0 && (
-                                            <span className="absolute top-1.5 left-1.5 text-[9px] font-semibold bg-black/60 text-white px-1.5 py-0.5 rounded-full">
-                                                Główne
-                                            </span>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            {imagePreviews.map((src, i) => (
+                                <motion.div
+                                    key={src}
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="relative aspect-square rounded-xl overflow-hidden border border-black/[0.04] group"
+                                >
+                                    <img src={src} alt={`Zdjęcie ${i + 1}`} className="w-full h-full object-cover" />
+                                    {i === 0 && (
+                                        <span className="absolute top-1.5 left-1.5 text-[9px] font-semibold bg-black/60 text-white px-1.5 py-0.5 rounded-full">
+                                            Główne
+                                        </span>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeImage(i)}
+                                        className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                                    >
+                                        <Trash2 size={12} />
+                                    </button>
+                                </motion.div>
+                            ))}
+                            {imageFiles.length < 8 && (
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isLoading}
+                                    className="aspect-square rounded-xl border-2 border-dashed border-[#d2d2d7] flex flex-col items-center justify-center gap-1.5 text-[#6e6e73] hover:border-[#1d1d1f] hover:text-[#1d1d1f] transition-colors"
+                                >
+                                    <Plus size={24} strokeWidth={1.5} />
+                                    <span className="text-[11px] font-medium">Dodaj</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {/* Rabaty za długi wynajem */}

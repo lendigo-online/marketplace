@@ -7,6 +7,8 @@ const nextConfig = {
             { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
             { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
             { protocol: 'http', hostname: 'localhost' },
+            { protocol: 'https', hostname: '*.public.blob.vercel-storage.com' },
+            { protocol: 'https', hostname: '*.private.blob.vercel-storage.com' },
         ],
     },
     async headers() {
