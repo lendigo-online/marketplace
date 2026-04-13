@@ -5,7 +5,8 @@ import prisma from "@/lib/prisma"
 import Image from "next/image"
 import { formatPrice } from "@/lib/utils"
 import AdminActions from "./AdminActions"
-import { Shield } from "lucide-react"
+import { Shield, Clock } from "lucide-react"
+import Link from "next/link"
 
 export default async function AdminPage() {
     const session = await getServerSession(authOptions)
@@ -125,8 +126,15 @@ function AdminListingCard({ listing, highlight }: { listing: any; highlight?: bo
                             <h3 className="font-bold text-[17px] text-[#1d1d1f] leading-snug">{listing.title}</h3>
                             <p className="text-[13px] text-[#6e6e73] mt-0.5">{listing.location} · {listing.category}</p>
                             <p className="text-[13px] text-[#6e6e73] mt-0.5">
-                                Wystawił: <span className="font-medium text-[#1d1d1f]">{listing.owner?.name}</span>
+                                Wystawił:{" "}
+                                <Link href={`/users/${listing.owner?.id}`} className="font-medium text-[#0071e3] hover:underline">
+                                    {listing.owner?.name}
+                                </Link>
                                 <span className="text-[#aeaeb2]"> ({listing.owner?.email})</span>
+                            </p>
+                            <p className="text-[12px] text-[#aeaeb2] mt-0.5 flex items-center gap-1">
+                                <Clock size={12} />
+                                Dodano: {new Date(listing.createdAt).toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                             </p>
                         </div>
                         <div className="flex flex-col items-end gap-2 flex-shrink-0">
