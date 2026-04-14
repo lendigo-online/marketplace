@@ -43,7 +43,7 @@ export async function POST(request: Request) {
             cancel_url: `${process.env.NEXTAUTH_URL}/dashboard`,
             client_reference_id: user.id,
             mode: "payment",
-            automatic_payment_methods: { enabled: true },
+            payment_method_types: ["card", "blik", "p24"],
             line_items: [
                 {
                     price_data: {
