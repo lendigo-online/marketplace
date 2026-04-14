@@ -29,7 +29,7 @@ export default function ListingWithCalendar({ listing, index = 0 }: Props) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.06, ease: "easeOut" }}
             layout
-            className={`bg-white rounded-[22px] border border-black/[0.04] shadow-apple-sm overflow-hidden ${(open || openDiscounts || openPromotion) ? "lg:col-span-2" : ""}`}
+            className="bg-white rounded-[22px] border border-black/[0.04] shadow-apple-sm overflow-hidden"
         >
             <div className="flex flex-col sm:flex-row">
                 {/* Zdjęcie */}
