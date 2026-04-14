@@ -36,6 +36,8 @@ const CATEGORIES = [
     { label: "Sporty wodne", href: "/?category=Sporty+wodne" },
     { label: "Odzież", href: "/?category=Odzież" },
     { label: "Gry", href: "/?category=Gry" },
+    { label: "Przyczepy", href: "/?category=Przyczepy" },
+    { label: "Maszyny budowlane", href: "/?category=Maszyny+budowlane" },
 ]
 
 interface HomeProps {
