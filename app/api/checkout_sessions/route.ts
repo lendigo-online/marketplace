@@ -50,7 +50,8 @@ export async function POST(request: Request) {
             cancel_url: `${process.env.NEXTAUTH_URL}/listings/${listingId}?canceled=1`,
             client_reference_id: user.id,
             mode: "payment",
-            payment_method_types: ["card", "blik", "p24"],
+            locale: "pl",
+            automatic_payment_methods: { enabled: true },
             line_items: [
                 {
                     price_data: {
