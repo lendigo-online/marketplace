@@ -2,9 +2,10 @@ import { Listing, Reservation, User, Review } from "@prisma/client"
 
 export type DiscountRule = { minDays: number; discountPercent: number }
 
-export type SafeListing = Omit<Listing, "createdAt" | "updatedAt"> & {
+export type SafeListing = Omit<Listing, "createdAt" | "updatedAt" | "promotedUntil"> & {
     createdAt: string
     updatedAt: string
+    promotedUntil: string | null
 }
 
 export type SafeReservation = Omit<

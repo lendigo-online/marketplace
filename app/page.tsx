@@ -110,10 +110,20 @@ export default async function Home({ searchParams }: HomeProps) {
         return true
     })
 
-    const safeListings: SafeListing[] = filteredListings.map((listing) => ({
+    // Promowane ogłoszenia na górze
+    const now = new Date()
+    const sortedListings = filteredListings.sort((a, b) => {
+        const aPromoted = a.promotedUntil && a.promotedUntil > now ? 1 : 0
+        const bPromoted = b.promotedUntil && b.promotedUntil > now ? 1 : 0
+        if (bPromoted !== aPromoted) return bPromoted - aPromoted
+        return b.createdAt.getTime() - a.createdAt.getTime()
+    })
+
+    const safeListings: SafeListing[] = sortedListings.map((listing) => ({
         ...listing,
         createdAt: listing.createdAt.toISOString(),
         updatedAt: listing.updatedAt.toISOString(),
+        promotedUntil: listing.promotedUntil?.toISOString() ?? null,
     }))
 
     const websiteSchema = {
