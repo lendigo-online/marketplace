@@ -15,6 +15,8 @@ import {
     Gamepad2,
     Waves,
     LayoutGrid,
+    Truck,
+    HardHat,
 } from "lucide-react"
 
 const categories = [
@@ -29,6 +31,8 @@ const categories = [
     { label: "Sporty wodne", icon: Waves },
     { label: "Odzież", icon: Shirt },
     { label: "Gry", icon: Gamepad2 },
+    { label: "Przyczepy", icon: Truck },
+    { label: "Maszyny budowlane", icon: HardHat },
 ]
 
 export default function CategoryBar() {

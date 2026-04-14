@@ -10,7 +10,8 @@ import LocationSearch from "@/components/LocationSearch"
 const categories = [
     "Elektronika", "Narzędzia", "Samochody", "Rowery",
     "Foto/Video", "Camping", "Muzyka",
-    "Sporty wodne", "Odzież", "Gry", "Inne"
+    "Sporty wodne", "Odzież", "Gry",
+    "Przyczepy", "Maszyny budowlane", "Inne"
 ]
 
 const categorySpecificFilters: Record<string, Array<{ key: string; label: string; options?: string[]; type?: string; unit?: string }>> = {
@@ -43,6 +44,12 @@ const categorySpecificFilters: Record<string, Array<{ key: string; label: string
     "Odzież": [
         { key: "plec", label: "Płeć", options: ["Damska", "Męska", "Unisex"] },
         { key: "rozmiar", label: "Rozmiar", options: ["XS", "S", "M", "L", "XL", "XXL"] },
+    ],
+    "Przyczepy": [
+        { key: "typ_przyczepy", label: "Typ przyczepy", options: ["Laweta", "Towarowa", "Kempingowa", "Przyczepa lekka", "Przyczepa ciężka"] },
+    ],
+    "Maszyny budowlane": [
+        { key: "typ_maszyny", label: "Typ maszyny", options: ["Koparka", "Ładowarka", "Koparko-ładowarka", "Walec", "Dźwig", "Rusztowanie", "Betoniarka", "Inne"] },
     ],
 }
 

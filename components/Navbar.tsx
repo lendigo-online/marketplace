@@ -6,7 +6,8 @@ import CategoryBar from "./CategoryBar"
 import { motion } from "framer-motion"
 import {
     Search, MapPin, CalendarDays, X, SlidersHorizontal, ChevronDown,
-    LayoutGrid, Laptop, Bike, Wrench, Camera, Music, Shirt, Tent, Car, Gamepad2, Waves
+    LayoutGrid, Laptop, Bike, Wrench, Camera, Music, Shirt, Tent, Car, Gamepad2, Waves,
+    Truck, HardHat,
 } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
@@ -28,6 +29,8 @@ const categories = [
     { label: "Sporty wodne", icon: Waves },
     { label: "Odzież", icon: Shirt },
     { label: "Gry", icon: Gamepad2 },
+    { label: "Przyczepy", icon: Truck },
+    { label: "Maszyny budowlane", icon: HardHat },
 ]
 
 const categorySpecificFilters: Record<string, Array<{ key: string; label: string; options?: string[]; type?: string; keyMin?: string; keyMax?: string }>> = {
@@ -60,6 +63,12 @@ const categorySpecificFilters: Record<string, Array<{ key: string; label: string
     "Odzież": [
         { key: "plec", label: "Płeć", options: ["Damska", "Męska", "Unisex"] },
         { key: "rozmiar", label: "Rozmiar", options: ["XS", "S", "M", "L", "XL", "XXL"] },
+    ],
+    "Przyczepy": [
+        { key: "typ_przyczepy", label: "Typ przyczepy", options: ["Laweta", "Towarowa", "Kempingowa", "Przyczepa lekka", "Przyczepa ciężka"] },
+    ],
+    "Maszyny budowlane": [
+        { key: "typ_maszyny", label: "Typ maszyny", options: ["Koparka", "Ładowarka", "Koparko-ładowarka", "Walec", "Dźwig", "Rusztowanie", "Betoniarka", "Inne"] },
     ],
 }
 
