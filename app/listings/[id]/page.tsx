@@ -73,6 +73,7 @@ export default async function ListingPage({ params }: { params: IParams }) {
         ...listing,
         createdAt: listing.createdAt.toISOString(),
         updatedAt: listing.updatedAt.toISOString(),
+        promotedUntil: listing.promotedUntil?.toISOString() ?? null,
     }
 
     const safeReservations: SafeReservation[] = listing.reservations.map(res => ({

@@ -9,7 +9,9 @@ import { Plus, Package, Calendar, Heart } from "lucide-react"
 import ProfileEditor from "./ProfileEditor"
 import IncomingReservations from "./IncomingReservations"
 import ListingWithCalendar from "./ListingWithCalendar"
+import DashboardToast from "./DashboardToast"
 import { IncomingReservation, SafeListing } from "@/types"
+import { Suspense } from "react"
 
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions)
@@ -57,6 +59,7 @@ export default async function DashboardPage() {
                     ...listing,
                     createdAt: listing.createdAt.toISOString(),
                     updatedAt: listing.updatedAt.toISOString(),
+                    promotedUntil: listing.promotedUntil?.toISOString() ?? null,
                 } as SafeListing,
                 user: {
                     id: res.user.id,
@@ -77,6 +80,7 @@ export default async function DashboardPage() {
 
     return (
         <div className="min-h-screen bg-[#fbfbfd]">
+            <Suspense><DashboardToast /></Suspense>
             {/* Header */}
             <div className="bg-white border-b border-black/[0.06]">
                 <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-10">
@@ -153,6 +157,7 @@ export default async function DashboardPage() {
                                         ...listing,
                                         createdAt: listing.createdAt.toISOString(),
                                         updatedAt: listing.updatedAt.toISOString(),
+                                        promotedUntil: listing.promotedUntil?.toISOString() ?? null,
                                     } as SafeListing}
                                 />
                             ))}

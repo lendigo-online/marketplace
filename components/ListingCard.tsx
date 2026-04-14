@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Heart } from "lucide-react"
+import { Heart, Zap } from "lucide-react"
 import { useState } from "react"
 
 import { SafeListing } from "@/types"
@@ -21,6 +21,7 @@ export default function ListingCard({ data, horizontal, isLoggedIn, initialLiked
     const router = useRouter()
     const [liked, setLiked] = useState(initialLiked ?? false)
     const [loading, setLoading] = useState(false)
+    const isPromoted = data.promotedUntil && new Date(data.promotedUntil) > new Date()
 
     const handleLike = async (e: React.MouseEvent) => {
         e.stopPropagation()
@@ -79,7 +80,7 @@ export default function ListingCard({ data, horizontal, isLoggedIn, initialLiked
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
             >
-                <div className="flex flex-row gap-4 w-full bg-white rounded-[18px] shadow-sm border border-[#f0f0f0] overflow-hidden hover:shadow-md transition-shadow duration-200">
+                <div className={`flex flex-row gap-4 w-full bg-white rounded-[18px] shadow-sm border overflow-hidden hover:shadow-md transition-shadow duration-200 ${isPromoted ? "border-[#ffde59] ring-2 ring-[#ffde59]/40" : "border-[#f0f0f0]"}`}>
                     <div className="relative w-[140px] shrink-0 bg-[#f5f5f7]">
                         <Image
                             fill
@@ -91,6 +92,12 @@ export default function ListingCard({ data, horizontal, isLoggedIn, initialLiked
                         <div className="absolute top-2 right-2">
                             {heartButton(12, "p-1.5")}
                         </div>
+                        {isPromoted && (
+                            <div className="absolute top-2 left-2 flex items-center gap-1 bg-[#ffde59] text-[#1d1d1f] text-[9px] font-bold rounded-full px-2 py-0.5">
+                                <Zap size={9} className="fill-[#1d1d1f]" />
+                                Wyróżnione
+                            </div>
+                        )}
                     </div>
                     <div className="flex flex-col justify-center gap-1 py-4 pr-4 min-w-0">
                         <span className="text-[10px] font-semibold text-[#6e6e73] bg-[#f5f5f7] rounded-full px-2 py-0.5 w-fit">
@@ -124,7 +131,7 @@ export default function ListingCard({ data, horizontal, isLoggedIn, initialLiked
             transition={{ duration: 0.25, ease: "easeOut" }}
         >
             <div className="flex flex-col gap-3 w-full">
-                <div className="aspect-square w-full relative overflow-hidden rounded-[22px] bg-[#f5f5f7]">
+                <div className={`aspect-square w-full relative overflow-hidden rounded-[22px] bg-[#f5f5f7] ${isPromoted ? "ring-2 ring-[#ffde59]/50" : ""}`}>
                     <Image
                         fill
                         className="object-cover h-full w-full transition-transform duration-500 group-hover:scale-105"
@@ -136,11 +143,17 @@ export default function ListingCard({ data, horizontal, isLoggedIn, initialLiked
                     <div className="absolute top-3 right-3">
                         {heartButton(14, "p-2")}
                     </div>
-                    <div className="absolute bottom-3 left-3">
+                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
                         <span className="text-[10px] font-semibold text-white bg-black/40 backdrop-blur-sm rounded-full px-2 py-0.5">
                             {data.category}
                         </span>
                     </div>
+                    {isPromoted && (
+                        <div className="absolute top-3 left-3 flex items-center gap-1 bg-[#ffde59] text-[#1d1d1f] text-[10px] font-bold rounded-full px-2.5 py-1 shadow-sm">
+                            <Zap size={10} className="fill-[#1d1d1f]" />
+                            Wyróżnione
+                        </div>
+                    )}
                 </div>
                 <div className="px-0.5">
                     <div className="font-semibold text-[14px] leading-tight text-[#1d1d1f] truncate tracking-tight">

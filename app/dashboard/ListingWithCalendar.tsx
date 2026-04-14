@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/utils"
 import { SafeListing, DiscountRule } from "@/types"
 import BlockedDatesEditor from "./BlockedDatesEditor"
 import DiscountRulesEditor from "./DiscountRulesEditor"
+import PromotionPanel from "./PromotionPanel"
 import { motion, AnimatePresence } from "framer-motion"
 
 interface Props {
@@ -18,6 +19,9 @@ interface Props {
 export default function ListingWithCalendar({ listing, index = 0 }: Props) {
     const [open, setOpen] = useState(false)
     const [openDiscounts, setOpenDiscounts] = useState(false)
+    const [openPromotion, setOpenPromotion] = useState(false)
+
+    const isPromoted = listing.promotedUntil && new Date(listing.promotedUntil) > new Date()
 
     return (
         <motion.div
@@ -25,7 +29,7 @@ export default function ListingWithCalendar({ listing, index = 0 }: Props) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.06, ease: "easeOut" }}
             layout
-            className={`bg-white rounded-[22px] border border-black/[0.04] shadow-apple-sm overflow-hidden ${(open || openDiscounts) ? "lg:col-span-2" : ""}`}
+            className={`bg-white rounded-[22px] border border-black/[0.04] shadow-apple-sm overflow-hidden ${(open || openDiscounts || openPromotion) ? "lg:col-span-2" : ""}`}
         >
             <div className="flex flex-col sm:flex-row">
                 {/* Zdjęcie */}
@@ -93,19 +97,28 @@ export default function ListingWithCalendar({ listing, index = 0 }: Props) {
                                 </motion.span>
                             </motion.button>
 
-                            <div className="relative group/promo">
-                                <button
-                                    disabled
-                                    className="flex items-center gap-1.5 px-3 py-2 rounded-full text-[13px] font-semibold border border-dashed border-[#ffde59] bg-[#fffbea] text-[#a07800] opacity-60 cursor-not-allowed"
+                            <motion.button
+                                onClick={() => { setOpenPromotion(v => !v); setOpen(false); setOpenDiscounts(false) }}
+                                whileTap={{ scale: 0.95 }}
+                                whileHover={{ scale: 1.03 }}
+                                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold border transition-colors duration-200 ${
+                                    openPromotion
+                                        ? "bg-gradient-to-r from-[#ffde59] to-[#ffc800] text-[#1d1d1f] border-[#ffde59]"
+                                        : isPromoted
+                                            ? "bg-[#fffbea] text-[#a07800] border-[#ffde59]"
+                                            : "bg-[#fffbea] text-[#a07800] border-[#ffde59]/50 hover:border-[#ffde59]"
+                                }`}
+                            >
+                                <Zap size={13} className={isPromoted ? "fill-[#ffde59] text-[#a07800]" : "text-[#a07800]"} />
+                                {isPromoted ? "Wyróżnione" : "Promuj"}
+                                <motion.span
+                                    animate={{ rotate: openPromotion ? 180 : 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="flex"
                                 >
-                                    <Zap size={13} className="fill-[#ffde59] text-[#a07800]" />
-                                    Promuj
-                                </button>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#1d1d1f] text-white text-[11px] rounded-lg whitespace-nowrap opacity-0 group-hover/promo:opacity-100 transition-opacity pointer-events-none">
-                                    Wkrótce dostępne
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1d1d1f]" />
-                                </div>
-                            </div>
+                                    <ChevronDown size={13} />
+                                </motion.span>
+                            </motion.button>
 
                             <motion.button
                                 onClick={() => { setOpen(v => !v); setOpenDiscounts(false) }}
@@ -131,6 +144,33 @@ export default function ListingWithCalendar({ listing, index = 0 }: Props) {
                     </div>
                 </div>
             </div>
+
+            {/* Promocja — animowane rozwinięcie */}
+            <AnimatePresence>
+                {openPromotion && (
+                    <motion.div
+                        key="promotion"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                    >
+                        <motion.div
+                            initial={{ y: -8 }}
+                            animate={{ y: 0 }}
+                            exit={{ y: -8 }}
+                            transition={{ duration: 0.25, ease: "easeOut" }}
+                            className="border-t border-black/[0.06] px-5 pb-5"
+                        >
+                            <PromotionPanel
+                                listingId={listing.id}
+                                promotedUntil={listing.promotedUntil ?? null}
+                            />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Rabaty — animowane rozwinięcie */}
             <AnimatePresence>
