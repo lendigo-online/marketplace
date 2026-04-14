@@ -44,7 +44,6 @@ export async function POST(request: Request) {
             client_reference_id: user.id,
             mode: "payment",
             locale: "pl",
-            automatic_payment_methods: { enabled: true },
             line_items: [
                 {
                     price_data: {
