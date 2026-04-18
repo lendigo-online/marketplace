@@ -228,23 +228,6 @@ export default async function Home({ searchParams }: HomeProps) {
                 </div>
             </section>
 
-            {/* ── Category Links (server-rendered for SEO) ── */}
-            <nav aria-label="Kategorie" className="bg-white border-b border-black/[0.04] py-3 px-4 md:px-6">
-                <div className="max-w-[1400px] mx-auto">
-                    <div className="flex flex-wrap gap-2 justify-center">
-                        {CATEGORIES.map(({ label, href }) => (
-                            <Link
-                                key={label}
-                                href={href}
-                                className="text-[13px] text-[#6e6e73] hover:text-[#1d1d1f] px-3 py-1.5 rounded-full hover:bg-[#f5f5f7] transition-all duration-200"
-                            >
-                                {label}
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-            </nav>
-
             {/* ── Listings Grid ── */}
             <section id="listings" className="max-w-[1400px] mx-auto px-4 md:px-6 py-12">
                 <div className="flex items-end justify-between mb-8">
