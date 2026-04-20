@@ -61,17 +61,7 @@ export default function LoginPage() {
             router.refresh()
         }
         if (callback?.error) {
-            try {
-                const res = await fetch(`/api/check-email?email=${encodeURIComponent(email)}`)
-                const { exists } = await res.json()
-                if (!exists) {
-                    router.push(`/register?email=${encodeURIComponent(email)}`)
-                } else {
-                    toast.error("Nieprawidłowy email lub hasło")
-                }
-            } catch {
-                toast.error("Nieprawidłowy email lub hasło")
-            }
+            toast.error("Nieprawidłowy email lub hasło")
         }
     }
 

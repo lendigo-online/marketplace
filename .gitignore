@@ -54,3 +54,14 @@ coverage/
 
 # Misc
 *.pem
+
+prompts.txt
+
+# Sensitive data exports / deploy artefakty
+listings.csv
+users.csv
+*.csv
+push_out.txt
+push_out_cmd.txt
+test_*.mjs
+test_*.js

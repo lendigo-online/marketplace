@@ -2,6 +2,14 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { z } from "zod"
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rateLimit"
+
+const schema = z.object({
+    listingId: z.string().min(1).max(128),
+    rating: z.coerce.number().int().min(1).max(5),
+    comment: z.string().min(3).max(2000),
+})
 
 export async function POST(request: Request) {
     try {
@@ -16,24 +24,50 @@ export async function POST(request: Request) {
 
         if (!currentUser) return new NextResponse("Unauthorized", { status: 401 })
 
-        const body = await request.json()
-        const { listingId, rating, comment } = body
+        const ip = getClientIp()
+        const ipLimit = await rateLimit({ key: `reviews:ip:${ip}`, limit: 20, windowSeconds: 3600 })
+        if (!ipLimit.ok) return rateLimitResponse(ipLimit.retryAfter)
 
-        if (!listingId || !rating || !comment) {
-            return new NextResponse("Missing criteria", { status: 400 })
+        const userLimit = await rateLimit({ key: `reviews:user:${currentUser.id}`, limit: 10, windowSeconds: 3600 })
+        if (!userLimit.ok) return rateLimitResponse(userLimit.retryAfter)
+
+        const body = await request.json().catch(() => null)
+        const parsed = schema.safeParse(body)
+        if (!parsed.success) {
+            return new NextResponse("Invalid input", { status: 400 })
         }
 
-        const parsedRating = parseInt(rating)
-        if (isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
-            return new NextResponse("Rating must be between 1 and 5", { status: 400 })
+        const { listingId, rating, comment } = parsed.data
+
+        const reservation = await prisma.reservation.findFirst({
+            where: {
+                userId: currentUser.id,
+                listingId,
+                status: "CONFIRMED",
+                endDate: { lt: new Date() },
+            },
+            select: { id: true }
+        })
+
+        if (!reservation) {
+            return new NextResponse("You can only review items you have rented", { status: 403 })
+        }
+
+        const existing = await prisma.review.findFirst({
+            where: { userId: currentUser.id, listingId },
+            select: { id: true }
+        })
+
+        if (existing) {
+            return new NextResponse("Already reviewed", { status: 409 })
         }
 
         const review = await prisma.review.create({
             data: {
                 userId: currentUser.id,
                 listingId,
-                rating: parsedRating,
-                comment
+                rating,
+                comment,
             }
         })
 

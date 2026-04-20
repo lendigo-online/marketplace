@@ -100,3 +100,12 @@ model EmailVerification {
 
   @@index([email])
 }
+
+model RateLimit {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+  @@index([createdAt])
+}

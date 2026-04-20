@@ -17,9 +17,11 @@ export async function POST(request: Request) {
         })
         if (!user) return new NextResponse("Unauthorized", { status: 401 })
 
-        const { listingId, tierDays } = await request.json()
+        const body = await request.json().catch(() => null)
+        const listingId = typeof body?.listingId === "string" ? body.listingId : null
+        const tierDays = typeof body?.tierDays === "number" ? body.tierDays : parseInt(body?.tierDays, 10)
 
-        if (!listingId || !tierDays) {
+        if (!listingId || !Number.isFinite(tierDays)) {
             return NextResponse.json({ error: "Missing listingId or tierDays" }, { status: 400 })
         }
 
