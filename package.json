@@ -27,7 +27,7 @@
     "@stripe/stripe-js": "^3.0.7",
     "@types/leaflet": "^1.9.21",
     "@vercel/blob": "^2.3.3",
-    "bcrypt": "^6.0.0",
+    "bcrypt": "^5.1.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "date-fns": "^3.3.1",
