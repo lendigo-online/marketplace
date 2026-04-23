@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { z } from "zod"
+import { createNotification } from "@/lib/notifications"
 
 const schema = z.object({
     listingId: z.string().min(1),
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
 
         const listing = await prisma.listing.findUnique({
             where: { id: listingId },
-            select: { id: true, pricePerDay: true, ownerId: true, status: true }
+            select: { id: true, title: true, pricePerDay: true, ownerId: true, status: true }
         })
 
         if (!listing) {
@@ -81,6 +82,23 @@ export async function POST(request: Request) {
                 }
             }
         })
+
+        await Promise.all([
+            createNotification({
+                userId: currentUser.id,
+                type: "RESERVATION_MADE",
+                title: "Wypożyczenie potwierdzone",
+                message: `Udało Ci się wypożyczyć "${listing.title}". Sprawdź szczegóły w swoich rezerwacjach.`,
+                link: "/reservations",
+            }),
+            createNotification({
+                userId: listing.ownerId,
+                type: "RESERVATION_RECEIVED",
+                title: "Nowa rezerwacja Twojego ogłoszenia",
+                message: `Ktoś właśnie wypożyczył "${listing.title}".`,
+                link: "/dashboard",
+            }),
+        ])
 
         return NextResponse.json(listingAndReservation)
     } catch (error) {

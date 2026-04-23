@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import UserMenu from "./UserMenu"
+import NotificationBell from "./NotificationBell"
 import CategoryBar from "./CategoryBar"
 import { motion } from "framer-motion"
 import {
@@ -660,6 +661,7 @@ export default function Navbar() {
                             >
                                 Dodaj ogłoszenie
                             </Link>
+                            <NotificationBell />
                             <UserMenu />
                         </div>
                     </div>

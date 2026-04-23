@@ -147,7 +147,7 @@ export default function CreateListingPage() {
             })
 
             if (response.ok) {
-                toast.success("Ogłoszenie zostało dodane!")
+                toast.success("Ogłoszenie wysłane do zatwierdzenia")
                 router.push("/")
                 router.refresh()
             } else {

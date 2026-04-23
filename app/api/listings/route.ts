@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { z } from "zod"
 import { CATEGORIES } from "@/lib/categories"
+import { createNotification } from "@/lib/notifications"
 
 const ALLOWED_IMAGE_HOSTS = [
     "images.unsplash.com",
@@ -71,6 +72,14 @@ export async function POST(request: Request) {
                 discountRules,
                 ownerId: currentUser.id
             }
+        })
+
+        await createNotification({
+            userId: currentUser.id,
+            type: "LISTING_PENDING",
+            title: "Ogłoszenie wysłane do zatwierdzenia",
+            message: `Twoje ogłoszenie "${title}" czeka na akceptację. Damy znać, gdy będzie widoczne.`,
+            link: "/dashboard",
         })
 
         return NextResponse.json(listing)
