@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { z } from "zod"
 import { createNotification } from "@/lib/notifications"
+import { calculateTotalPrice, countRentalDays } from "@/lib/pricing"
 
 const schema = z.object({
     listingId: z.string().min(1),
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
 
         const listing = await prisma.listing.findUnique({
             where: { id: listingId },
-            select: { id: true, title: true, pricePerDay: true, ownerId: true, status: true }
+            select: { id: true, title: true, pricePerDay: true, discountRules: true, ownerId: true, status: true }
         })
 
         if (!listing) {
@@ -66,8 +67,8 @@ export async function POST(request: Request) {
             return new NextResponse("Cannot reserve your own listing", { status: 400 })
         }
 
-        const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-        const totalPrice = Math.round(listing.pricePerDay * days * 100) / 100
+        const days = countRentalDays(start, end)
+        const totalPrice = calculateTotalPrice(listing.pricePerDay, days, listing.discountRules)
 
         const listingAndReservation = await prisma.listing.update({
             where: { id: listingId },

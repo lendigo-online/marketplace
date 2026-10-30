@@ -417,6 +417,7 @@ export default function CreateListingPage() {
                                         <input
                                             type="number"
                                             min={1}
+                                            max={365}
                                             placeholder="7"
                                             value={rule.minDays}
                                             onChange={e => setDiscountRules(prev => prev.map((r, j) => j === i ? { ...r, minDays: e.target.value } : r))}
@@ -426,7 +427,7 @@ export default function CreateListingPage() {
                                         <input
                                             type="number"
                                             min={1}
-                                            max={99}
+                                            max={90}
                                             placeholder="10"
                                             value={rule.discountPercent}
                                             onChange={e => setDiscountRules(prev => prev.map((r, j) => j === i ? { ...r, discountPercent: e.target.value } : r))}

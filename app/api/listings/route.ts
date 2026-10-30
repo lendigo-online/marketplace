@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma"
 import { z } from "zod"
 import { CATEGORIES } from "@/lib/categories"
 import { createNotification } from "@/lib/notifications"
+import { discountRulesSchema } from "@/lib/discounts"
 
 const ALLOWED_IMAGE_HOSTS = [
     "images.unsplash.com",
@@ -25,11 +26,6 @@ const imageUrl = z.string().url().max(2048).refine((u) => {
     }
 }, "Disallowed image host")
 
-const discountRule = z.object({
-    minDays: z.number().int().min(1).max(365),
-    percent: z.number().min(0).max(90),
-})
-
 const schema = z.object({
     title: z.string().min(3).max(120),
     description: z.string().min(10).max(5000),
@@ -37,7 +33,7 @@ const schema = z.object({
     location: z.string().min(2).max(200),
     category: z.enum(CATEGORIES),
     images: z.array(imageUrl).max(12).default([]),
-    discountRules: z.array(discountRule).max(10).optional().default([]),
+    discountRules: discountRulesSchema.optional().default([]),
 })
 
 export async function POST(request: Request) {

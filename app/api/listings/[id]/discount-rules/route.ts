@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { discountRulesSchema } from "@/lib/discounts"
 
 export async function PUT(
     request: Request,
@@ -22,14 +23,15 @@ export async function PUT(
         if (!listing) return new NextResponse("Not found", { status: 404 })
         if (listing.ownerId !== currentUser.id) return new NextResponse("Forbidden", { status: 403 })
 
-        const { discountRules } = await request.json()
-        if (!Array.isArray(discountRules)) {
-            return new NextResponse("Invalid data", { status: 400 })
+        const body = await request.json().catch(() => null)
+        const parsed = discountRulesSchema.safeParse(body?.discountRules)
+        if (!parsed.success) {
+            return new NextResponse("Rabat: od 1 do 365 dni, maks. 90%, najwyżej 10 progów", { status: 400 })
         }
 
         const updated = await prisma.listing.update({
             where: { id: params.id },
-            data: { discountRules }
+            data: { discountRules: parsed.data }
         })
 
         return NextResponse.json({ discountRules: updated.discountRules })
