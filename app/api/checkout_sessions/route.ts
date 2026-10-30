@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { stripe } from "@/lib/stripe"
 import prisma from "@/lib/prisma"
+import { calculateTotalPrice, countRentalDays } from "@/lib/pricing"
 
 export async function POST(request: Request) {
     try {
@@ -42,8 +43,8 @@ export async function POST(request: Request) {
 
         if (!listing) return new NextResponse("Listing not found", { status: 404 })
 
-        const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-        const totalPrice = listing.pricePerDay * days
+        const days = countRentalDays(start, end)
+        const totalPrice = calculateTotalPrice(listing.pricePerDay, days, listing.discountRules)
 
         const stripeSession = await stripe.checkout.sessions.create({
             success_url: `${process.env.NEXTAUTH_URL}/dashboard?success=1`,

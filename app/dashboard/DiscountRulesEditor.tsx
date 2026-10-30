@@ -48,12 +48,12 @@ export default function DiscountRulesEditor({ listingId, initialRules }: Props) 
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ discountRules: validRules }),
             })
-            if (!res.ok) throw new Error()
+            if (!res.ok) throw new Error(res.status === 400 ? await res.text() : undefined)
             toast.success("Rabaty zapisane")
             setIsDirty(false)
             router.refresh()
-        } catch {
-            toast.error("Błąd zapisywania")
+        } catch (error) {
+            toast.error((error as Error).message || "Błąd zapisywania")
         } finally {
             setIsLoading(false)
         }
@@ -83,6 +83,7 @@ export default function DiscountRulesEditor({ listingId, initialRules }: Props) 
                                 <input
                                     type="number"
                                     min={1}
+                                    max={365}
                                     placeholder="7"
                                     value={rule.minDays}
                                     onChange={e => update(i, "minDays", e.target.value)}
@@ -92,7 +93,7 @@ export default function DiscountRulesEditor({ listingId, initialRules }: Props) 
                                 <input
                                     type="number"
                                     min={1}
-                                    max={99}
+                                    max={90}
                                     placeholder="10"
                                     value={rule.discountPercent}
                                     onChange={e => update(i, "discountPercent", e.target.value)}

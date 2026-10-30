@@ -3,13 +3,14 @@
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { DateRange } from "react-day-picker"
-import { differenceInDays, eachDayOfInterval, parse } from "date-fns"
+import { eachDayOfInterval, parse } from "date-fns"
 import toast from "react-hot-toast"
 import { motion } from "framer-motion"
 import { AlertCircle, Phone } from "lucide-react"
 
 import { formatPrice } from "@/lib/utils"
-import { SafeListing, SafeReservation, SafeUser, DiscountRule } from "@/types"
+import { calculateTotalPrice, countRentalDays, getActiveDiscount } from "@/lib/pricing"
+import { SafeListing, SafeReservation, SafeUser } from "@/types"
 import { DatePickerWithRange } from "@/components/ui/date-picker"
 
 interface ReservationSidebarProps {
@@ -59,23 +60,19 @@ export default function ReservationSidebar({
 
     const dayCount = useMemo(() => {
         if (!date?.from || !date?.to) return 0
-        return Math.max(1, differenceInDays(date.to, date.from))
+        return countRentalDays(date.from, date.to)
     }, [date])
 
-    const activeDiscount = useMemo(() => {
-        const rules = (listing.discountRules ?? []) as DiscountRule[]
-        if (!rules.length || !dayCount) return null
-        const applicable = rules
-            .filter(r => dayCount >= Number(r.minDays))
-            .sort((a, b) => Number(b.minDays) - Number(a.minDays))
-        return applicable[0] ?? null
-    }, [dayCount, listing.discountRules])
+    // Same helpers as /api/reservations, so the shown total is the stored one.
+    const activeDiscount = useMemo(
+        () => (dayCount ? getActiveDiscount(listing.discountRules, dayCount) : null),
+        [dayCount, listing.discountRules]
+    )
 
-    const totalPrice = useMemo(() => {
-        const base = dayCount * listing.pricePerDay
-        if (!activeDiscount) return base
-        return base * (1 - activeDiscount.discountPercent / 100)
-    }, [dayCount, listing.pricePerDay, activeDiscount])
+    const totalPrice = useMemo(
+        () => calculateTotalPrice(listing.pricePerDay, dayCount, listing.discountRules),
+        [dayCount, listing.pricePerDay, listing.discountRules]
+    )
 
     const onReserve = async () => {
         if (!currentUser) return router.push("/login")
